@@ -10,7 +10,7 @@ class LLMClient:
     async def complete(self, messages: list[Message]) -> LLMResponse:
         provider = self.config.provider
 
-        if provider in ("openai", "openai_compatible", "azure_openai"):
+        if provider in ("openai", "openai_compatible", "azure_openai", "openrouter"):
             return await call_openai(messages, self.config)
         elif provider == "anthropic":
             return await call_anthropic(messages, self.config)

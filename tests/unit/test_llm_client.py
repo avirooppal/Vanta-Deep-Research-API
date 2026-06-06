@@ -44,6 +44,25 @@ async def test_routes_to_anthropic():
 
 
 @pytest.mark.asyncio
+async def test_routes_to_openrouter():
+    mock_response = {
+        "choices": [{"message": {"content": "openrouter mocked"}}],
+        "model": "openai/gpt-4o",
+        "usage": {"prompt_tokens": 6, "completion_tokens": 2},
+    }
+    with patch("core.llm.providers.openai.httpx.AsyncClient") as mock_cls:
+        mock_cls.return_value = _make_mock_client(mock_response)
+        config = LLMConfig(
+            provider="openrouter",
+            base_url="https://openrouter.ai/api/v1",
+            api_key="sk-or-test",
+            model="openai/gpt-4o",
+        )
+        result = await LLMClient(config).complete([Message(role="user", content="hi")])
+    assert result.content == "openrouter mocked"
+
+
+@pytest.mark.asyncio
 async def test_raises_on_unknown_provider():
     config = LLMConfig(provider="unknown_provider", base_url="http://x", api_key=None, model="m")
     with pytest.raises(ValueError, match="Unsupported provider"):
