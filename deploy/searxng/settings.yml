@@ -1,0 +1,9 @@
+use_default_settings: true
+server:
+  secret_key: "changeme"
+  limiter: false
+search:
+  safe_search: 0
+  formats:
+    - html
+    - json

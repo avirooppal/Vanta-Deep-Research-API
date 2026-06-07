@@ -6,16 +6,25 @@ from core.llm.providers.anthropic import call_anthropic
 class LLMClient:
     def __init__(self, config: LLMConfig):
         self.config = config
+        self.total_tokens_in = 0
+        self.total_tokens_out = 0
+        self.search_queries_issued = 0
+        self.sources_fetched = 0
 
     async def complete(self, messages: list[Message]) -> LLMResponse:
         provider = self.config.provider
 
         if provider in ("openai", "openai_compatible", "azure_openai", "openrouter"):
-            return await call_openai(messages, self.config)
+            res = await call_openai(messages, self.config)
         elif provider == "anthropic":
-            return await call_anthropic(messages, self.config)
+            res = await call_anthropic(messages, self.config)
         else:
             raise ValueError(f"Unsupported provider: {provider}")
+
+        self.total_tokens_in += res.tokens_in
+        self.total_tokens_out += res.tokens_out
+        return res
+
 
     @classmethod
     def from_backend(cls, backend) -> "LLMClient":

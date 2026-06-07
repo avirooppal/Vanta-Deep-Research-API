@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     max_research_rounds: int = 3
     extraction_concurrency: int = 3
+    searxng_url: str = "http://searxng:8080"
     webhook_max_retries: int = 5
     audit_retention_days: int = 365
     export_cache_ttl_seconds: int = 86400

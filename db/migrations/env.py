@@ -16,6 +16,8 @@ from db.models.source import Source  # noqa: F401
 from db.models.audit_log import AuditLog  # noqa: F401
 from db.models.usage_record import UsageRecord  # noqa: F401
 from db.models.llm_backend import LLMBackend  # noqa: F401
+from db.models.webhook import WebhookEndpoint  # noqa: F401
+
 
 # Alembic Config object
 config = context.config
