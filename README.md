@@ -1,7 +1,9 @@
 # Deep Research API — Developer Documentation
 
-Welcome to the **Deep Research API**, a self-hosted, privacy-first Research-as-a-Service API built on the Odysseus `IterResearch` engine. It exposes a single-purpose REST API: given a query, it runs a multi-round loop (plan queries → search → fetch webpages → extract facts → synthesize findings) and generates a structured, cited report, running entirely inside your infrastructure.
+Welcome to the **Deep Research API**, a self-hosted, privacy-first Research-as-a-Service API. It exposes a single-purpose REST API and a beautiful web UI: given a query, it runs a multi-round loop (plan queries → search → fetch webpages → extract facts → synthesize findings) and generates a structured, cited report, running entirely inside your infrastructure.
 
+### New: Bring Your Own Key (BYOK)
+You can now use the Deep Research API instantly without setting up a multi-tenant organization. Just paste your own **OpenAI, Anthropic, Gemini, or OpenRouter** API Key directly into the UI!
 ---
 
 ## 1. Folder Structure
@@ -55,6 +57,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/drapi
 REDIS_URL=redis://localhost:6379/0
 SECRET_KEY=use-a-secure-32-character-key-here
 ENVIRONMENT=development
+SEARXNG_URL=http://localhost:8080
 ```
 
 ### Step 2: Install Dependencies & Apply Migrations
@@ -64,8 +67,8 @@ uv pip install -r requirements.txt
 uv run python scripts/migrate.py
 ```
 
-### Step 3: Seed Credentials
-Initialize a tenant organization, configure a default LLM backend (e.g. OpenAI), and generate an API key:
+### Step 3: Seed Credentials (Optional for BYOK)
+If you want to use the multi-tenant Organization features, initialize a tenant organization and configure a default LLM backend:
 ```bash
 uv run python scripts/seed.py \
   --org-name "Acme Corp" \
@@ -74,6 +77,8 @@ uv run python scripts/seed.py \
   --backend-model "gpt-4o"
 ```
 *Note down the generated **API Key** (e.g. `drapi_live_...`) and the **Org ID**.*
+
+*(If you just want to use your own LLM keys on the fly, you can skip this step and use the BYOK flow in the Web UI).*
 
 ### Step 4: Run Services
 You need to run two processes concurrently in development:
