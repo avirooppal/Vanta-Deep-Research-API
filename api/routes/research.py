@@ -8,6 +8,7 @@ from sqlalchemy import select
 from db.session import get_db_session
 from db.models.research_job import ResearchJob
 from db.models.report import Report
+from db.models.source import Source
 from arq import create_pool
 from core.queue.worker import get_redis_settings
 
@@ -20,6 +21,10 @@ class ResearchRequest(BaseModel):
     priority: int = 3
     model_override: Optional[str] = None
     metadata: Optional[dict] = None
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
 
 
 class ResearchResponse(BaseModel):
@@ -36,6 +41,26 @@ async def submit_research(body: ResearchRequest, request: Request):
 
     job_id = f"job_{uuid.uuid4().hex[:12]}"
 
+    transient_backend = getattr(request.state, "transient_backend", None)
+
+    final_backend = transient_backend.copy() if transient_backend else {}
+    if body.provider:
+        final_backend["provider"] = body.provider
+    if body.api_key:
+        final_backend["api_key"] = body.api_key
+    if body.base_url:
+        final_backend["base_url"] = body.base_url
+    if body.model:
+        final_backend["model"] = body.model
+
+    metadata = body.metadata or {}
+    if final_backend:
+        if "api_key" in final_backend and final_backend["api_key"]:
+            from core.security.encryption import encrypt
+            final_backend["api_key_encrypted"] = encrypt(final_backend["api_key"]).decode("utf-8")
+            final_backend.pop("api_key", None)
+        metadata["transient_backend"] = final_backend
+
     async with get_db_session() as db:
         job = ResearchJob(
             id=job_id,
@@ -46,10 +71,11 @@ async def submit_research(body: ResearchRequest, request: Request):
             max_rounds=min(body.max_rounds, 5),
             priority=max(1, min(5, body.priority)),
             model_override=body.model_override,
-            metadata_json=json.dumps(body.metadata) if body.metadata else None,
+            metadata_json=json.dumps(metadata) if metadata else None,
             created_at=datetime.now(timezone.utc),
         )
         db.add(job)
+
 
     request.state.query_text = body.query
 
@@ -84,6 +110,26 @@ async def get_research_job(job_id: str, request: Request):
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
         "error": job.error,
     }
+
+    if job.status in ("running", "completed"):
+        async with get_db_session() as db:
+            sources_result = await db.execute(select(Source).where(Source.job_id == job_id))
+            sources = sources_result.scalars().all()
+            
+            partial_sources = []
+            max_round = 0
+            for s in sources:
+                partial_sources.append({
+                    "url": s.url,
+                    "title": s.title,
+                    "excerpt": s.excerpt,
+                    "round_number": s.round_number
+                })
+                if s.round_number > max_round:
+                    max_round = s.round_number
+            
+            response_data["partial_sources"] = partial_sources
+            response_data["rounds_completed"] = max_round
 
     if job.status == "completed":
         async with get_db_session() as db:

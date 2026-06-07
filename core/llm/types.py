@@ -23,4 +23,4 @@ class LLMConfig:
     model: str
     max_concurrent: int = 3
     temperature: float = 0.2
-    max_tokens: int = 4096
+    max_tokens: int | None = None

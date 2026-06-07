@@ -17,4 +17,7 @@ def generate_api_key(org_prefix: str) -> tuple[str, str]:
 
 
 def verify_api_key(full_key: str, key_hash: str) -> bool:
-    return bcrypt.checkpw(full_key.encode(), key_hash.encode())
+    try:
+        return bcrypt.checkpw(full_key.encode(), key_hash.encode())
+    except ValueError:
+        return False

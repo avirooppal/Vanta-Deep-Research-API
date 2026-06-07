@@ -11,6 +11,8 @@ from db.models.report import Report
 from db.models.source import Source
 from db.models.llm_backend import LLMBackend
 from db.models.usage_record import UsageRecord
+from db.models.api_key import APIKey
+from db.models.org import Org
 from core.llm.client import LLMClient
 from core.research.engine import run_research, RoundResult
 from core.config import settings
@@ -23,7 +25,6 @@ logger = logging.getLogger(__name__)
 async def run_research_job(ctx: dict, job_id: str) -> None:
     cancel_event = asyncio.Event()
     llm = None
-    sources_buffer: list[dict] = []
 
     async def on_progress(result: RoundResult) -> None:
         async with get_db_session() as db:
@@ -32,13 +33,17 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
                 cancel_event.set()
                 return
 
-        for finding in result.new_findings:
-            sources_buffer.append({
-                "url": finding.url,
-                "title": finding.title,
-                "excerpt": finding.facts[:500],
-                "round_number": finding.round_number,
-            })
+            for finding in result.new_findings:
+                db.add(Source(
+                    id=f"src_{uuid.uuid4().hex[:12]}",
+                    job_id=job_id,
+                    org_id=job_row.org_id,
+                    url=finding.url,
+                    title=finding.title,
+                    excerpt=finding.facts[:500],
+                    round_number=finding.round_number,
+                ))
+            await db.commit()
 
     try:
         async with get_db_session() as db:
@@ -48,24 +53,54 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             job.status = "running"
             job.started_at = datetime.now(timezone.utc)
 
-            backend_result = await db.execute(
-                select(LLMBackend).where(
-                    LLMBackend.org_id == job.org_id,
-                    LLMBackend.is_default == True,
-                )
-            )
-            backend = backend_result.scalar_one_or_none()
-            if not backend:
-                job.status = "failed"
-                job.error = "No default LLM backend configured for this organisation"
-                job.finished_at = datetime.now(timezone.utc)
-                raise ValueError("No default LLM backend configured for this organisation")
+            # Check if transient backend details are specified
+            if job.metadata_json:
+                try:
+                    meta = json.loads(job.metadata_json)
+                    tb = meta.get("transient_backend")
+                    if tb:
+                        from core.security.encryption import decrypt
+                        from core.llm.types import LLMConfig
+                        enc_key = tb.get("api_key_encrypted")
+                        if enc_key:
+                            if isinstance(enc_key, str):
+                                enc_key = enc_key.encode("utf-8")
+                            api_key = decrypt(enc_key)
+                        else:
+                            api_key = None
 
-            llm = LLMClient.from_backend(backend)
+                        config = LLMConfig(
+                            provider=tb.get("provider", "openai"),
+                            base_url=tb.get("base_url", "https://api.openai.com/v1"),
+                            api_key=api_key,
+                            model=tb.get("model", "gpt-4o"),
+                            max_concurrent=3
+                        )
+                        llm = LLMClient(config)
+                except Exception as e:
+                    logger.error(f"Failed to load transient backend: {e}")
+
+            if not llm:
+                backend_result = await db.execute(
+                    select(LLMBackend).where(
+                        LLMBackend.org_id == job.org_id,
+                        LLMBackend.is_default == True,
+                    )
+                )
+                backend = backend_result.scalar_one_or_none()
+                if not backend:
+                    job.status = "failed"
+                    job.error = "No default LLM backend configured for this organisation"
+                    job.finished_at = datetime.now(timezone.utc)
+                    raise ValueError("No default LLM backend configured for this organisation")
+
+                llm = LLMClient.from_backend(backend)
+
             llm.total_tokens_in = 0
             llm.total_tokens_out = 0
             llm.search_queries_issued = 0
             llm.sources_fetched = 0
+
 
         report_output = await run_research(
             question=job.query,
@@ -87,16 +122,7 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             )
             db.add(report)
 
-            for src in sources_buffer:
-                db.add(Source(
-                    id=f"src_{uuid.uuid4().hex[:12]}",
-                    job_id=job_id,
-                    org_id=job.org_id,
-                    url=src["url"],
-                    title=src["title"],
-                    excerpt=src["excerpt"],
-                    round_number=src["round_number"],
-                ))
+            # Sources are now inserted incrementally during on_progress
 
             job_row = await db.get(ResearchJob, job_id)
             job_row.status = "completed"

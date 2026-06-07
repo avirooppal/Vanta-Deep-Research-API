@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Research API Console</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Marked.js for Markdown Rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            --panel-bg: rgba(30, 41, 59, 0.45);
+            --panel-border: rgba(255, 255, 255, 0.08);
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100/vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 1rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .version {
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            color: var(--text-muted);
+            border: 1px solid var(--panel-border);
+        }
+
+        /* Glassmorphism Panel */
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, textarea, select {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: var(--text-main);
+            padding: 0.75rem;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        button {
+            background: var(--primary);
+            color: var(--text-main);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: var(--text-muted);
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Collapsible settings toggle */
+        .settings-toggle {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            text-decoration: underline;
+            text-align: right;
+            user-select: none;
+        }
+
+        /* Loading Spinner */
+        .spinner-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 2rem 0;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Status Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-queued { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+        .badge-running { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+        .badge-completed { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .badge-failed { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+
+        /* Report Markdown Styling */
+        .report-content {
+            line-height: 1.7;
+            font-size: 1.05rem;
+            color: #e2e8f0;
+        }
+
+        .report-content h1, .report-content h2, .report-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        .report-content h1 { font-size: 1.6rem; border-bottom: 1px solid var(--panel-border); padding-bottom: 0.4rem; }
+        .report-content h2 { font-size: 1.35rem; }
+        .report-content h3 { font-size: 1.15rem; }
+        .report-content p { margin-bottom: 1rem; }
+        .report-content ul, .report-content ol { margin-bottom: 1rem; padding-left: 1.5rem; }
+        .report-content li { margin-bottom: 0.4rem; }
+        .report-content blockquote {
+            border-left: 4px solid var(--primary);
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.5rem 1rem;
+            margin: 1rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sources-list {
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--panel-border);
+            padding-top: 1rem;
+        }
+
+        .source-item {
+            margin-bottom: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .source-item a {
+            color: #818cf8;
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .source-item a:hover {
+            text-decoration: underline;
+        }
+
+        .source-index {
+            color: var(--text-muted);
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .source-title {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .export-actions {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Deep Research Console</h1>
+            <div class="version">v0.1.0</div>
+        </header>
+
+        <!-- API Configuration Settings -->
+        <div class="card" id="settingsCard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <h2>⚙ Connection Settings</h2>
+                <div class="settings-toggle" onclick="toggleSettings()" id="settingsToggle">Hide</div>
+            </div>
+            <div id="settingsFields" class="row">
+                <div class="form-group">
+                    <label for="advProvider">Provider</label>
+                    <select id="advProvider">
+                        <option value="">Auto-detect from key</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="openai_compatible">Gemini (Google)</option>
+                        <option value="openrouter">OpenRouter</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="apiKey">LLM API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-... or AIza...">
+                </div>
+                <div class="form-group" style="grid-column: span 2; display: none;">
+                    <input type="hidden" id="apiUrl" value="http://localhost:8000">
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit Query Card -->
+        <div class="card" id="queryCard">
+            <h2>🔍 Launch New Research</h2>
+            <div class="form-group">
+                <label for="queryText">Research Question</label>
+                <textarea id="queryText" rows="4" placeholder="What are the key competitor dynamics in the solid-state battery space as of 2026?"></textarea>
+            </div>
+            <div class="row" style="align-items: end; margin-top: 1rem;">
+                <div class="form-group">
+                    <label for="maxRounds">Max Rounds (1 - 5)</label>
+                    <select id="maxRounds">
+                        <option value="1">1 Round (Fast)</option>
+                        <option value="2">2 Rounds</option>
+                        <option value="3" selected>3 Rounds (Balanced)</option>
+                        <option value="4">4 Rounds</option>
+                        <option value="5">5 Rounds (Comprehensive)</option>
+                    </select>
+                </div>
+                <button onclick="submitResearch()" id="submitBtn">Start Research Pipeline</button>
+            </div>
+
+            <!-- Advanced LLM Configuration (Collapsible) -->
+            <div style="margin-top: 1.5rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;" onclick="toggleAdvancedLlm()">
+                    <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted);">🛠 Advanced LLM Override (Optional)</span>
+                    <span id="advToggleArrow" style="color: var(--text-muted); font-size: 0.8rem;">[+] Expand</span>
+                </div>
+                <div id="advancedLlmFields" style="display: none; margin-top: 1rem; gap: 1rem; grid-template-columns: 1fr 1fr;">
+                    <!-- Provider moved to main settings -->
+                    <div class="form-group">
+                        <label for="advModel">Model Name</label>
+                        <input type="text" id="advModel" placeholder="e.g. gpt-4o, claude-3-5-sonnet-latest">
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label for="advBaseUrl">Base URL Override</label>
+                        <input type="text" id="advBaseUrl" placeholder="e.g. https://api.openai.com/v1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Progress Tracker Card -->
+        <div class="card" id="progressCard" style="display: none;">
+            <h2>⏳ Execution Pipeline</h2>
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <div style="text-align: center;">
+                    <p style="font-size: 1.1rem; font-weight: 600;">Status: <span id="statusBadge" class="badge">QUEUED</span></p>
+                    <p id="statusMsg" style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Initializing research loops...</p>
+                </div>
+                
+                <div id="liveProgressLog" style="width: 100%; margin-top: 1.5rem; height: 200px; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; border: 1px solid var(--panel-border); text-align: left; font-size: 0.9rem; color: var(--text-muted); font-family: monospace; display: flex; flex-direction: column; gap: 0.5rem;">
+                </div>
+
+                <button onclick="cancelResearch()" class="danger-btn" style="background: var(--danger); margin-top: 1rem;" id="cancelBtn">Cancel Execution</button>
+            </div>
+        </div>
+
+        <!-- Final Report Card -->
+        <div class="card" id="reportCard" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--panel-border); padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                <h2>📄 Synthesized Report</h2>
+                <button onclick="resetConsole()" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--panel-border);">New Research</button>
+            </div>
+            <div id="reportSummary" style="background: rgba(99, 102, 241, 0.08); border-left: 4px solid var(--primary); padding: 1rem; border-radius: 0 8px 8px 0; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem; color: var(--primary);">Executive Summary</h3>
+                <p id="summaryText" style="line-height: 1.6;"></p>
+            </div>
+            <div id="reportHTML" class="report-content"></div>
+            
+            <div class="sources-list">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Cited Sources</h3>
+                <div id="sourcesContainer"></div>
+            </div>
+
+            <div class="export-actions">
+                <button onclick="downloadReport()" id="downloadBtn">📥 Download Markdown</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load settings from localStorage if present
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedUrl = localStorage.getItem("drapi_url");
+            const savedKey = localStorage.getItem("drapi_key");
+            if (savedUrl) document.getElementById("apiUrl").value = savedUrl;
+            if (savedKey) document.getElementById("apiKey").value = savedKey;
+        });
+
+        let pollInterval = null;
+        let currentJobId = null;
+
+        function toggleSettings() {
+            const fields = document.getElementById("settingsFields");
+            const toggle = document.getElementById("settingsToggle");
+            if (fields.style.display === "none") {
+                fields.style.display = "grid";
+                toggle.textContent = "Hide";
+            } else {
+                fields.style.display = "none";
+                toggle.textContent = "Show Settings";
+            }
+        }
+
+        function toggleAdvancedLlm() {
+            const fields = document.getElementById("advancedLlmFields");
+            const arrow = document.getElementById("advToggleArrow");
+            if (fields.style.display === "none") {
+                fields.style.display = "grid";
+                arrow.textContent = "[-] Collapse";
+            } else {
+                fields.style.display = "none";
+                arrow.textContent = "[+] Expand";
+            }
+        }
+
+        function getAuthHeaders(provider, model, baseUrl) {
+            const key = document.getElementById("apiKey").value.trim();
+            const headers = {
+                "Authorization": `Bearer ${key}`,
+                "Content-Type": "application/json"
+            };
+            if (provider) headers["X-Provider"] = provider;
+            if (model) headers["X-Model"] = model;
+            if (baseUrl) headers["X-Base-Url"] = baseUrl;
+            return headers;
+        }
+
+        function getBaseUrl() {
+            return document.getElementById("apiUrl").value.trim().replace(/\/$/, "");
+        }
+
+        function saveConfig() {
+            localStorage.setItem("drapi_url", getBaseUrl());
+            localStorage.setItem("drapi_key", document.getElementById("apiKey").value.trim());
+        }
+
+        async function submitResearch() {
+            const query = document.getElementById("queryText").value.trim();
+            const maxRounds = parseInt(document.getElementById("maxRounds").value);
+            const provider = document.getElementById("advProvider").value;
+            const model = document.getElementById("advModel").value.trim();
+            const baseUrl = document.getElementById("advBaseUrl").value.trim();
+
+            if (!query) {
+                alert("Please enter a research question.");
+                return;
+            }
+
+            saveConfig();
+            document.getElementById("submitBtn").disabled = true;
+
+            const url = `${getBaseUrl()}/v1/research`;
+            const payload = { query, max_rounds: maxRounds };
+            if (provider) payload.provider = provider;
+            if (model) payload.model = model;
+            if (baseUrl) payload.base_url = baseUrl;
+
+            try {
+                const res = await fetch(url, {
+                    method: "POST",
+                    headers: getAuthHeaders(provider, model, baseUrl),
+                    body: JSON.stringify(payload)
+                });
+
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || errorData.detail || `Server returned ${res.status}`);
+                }
+
+                const data = await res.json();
+                currentJobId = data.id;
+
+                // Toggle views
+                document.getElementById("queryCard").style.display = "none";
+                document.getElementById("progressCard").style.display = "block";
+                document.getElementById("cancelBtn").disabled = false;
+
+                document.getElementById("liveProgressLog").innerHTML = '<div style="color: var(--primary);">[System] Dispatched task to worker queue...</div>';
+                updateStatusBadge(data.status);
+                startPolling(currentJobId);
+
+            } catch (err) {
+                alert(`Error submitting job: ${err.message}`);
+                document.getElementById("submitBtn").disabled = false;
+            }
+        }
+
+        function updateStatusBadge(status) {
+            const badge = document.getElementById("statusBadge");
+            badge.className = `badge badge-${status}`;
+            badge.textContent = status;
+
+            const msg = document.getElementById("statusMsg");
+            if (status === "queued") {
+                msg.textContent = "Waiting for an available worker slot...";
+            } else if (status === "running") {
+                msg.textContent = "Orchestrating search rounds & extracting findings...";
+            }
+        }
+
+        function startPolling(jobId) {
+            if (pollInterval) clearInterval(pollInterval);
+
+            pollInterval = setInterval(async () => {
+                const url = `${getBaseUrl()}/v1/research/${jobId}`;
+                try {
+                    const res = await fetch(url, { headers: getAuthHeaders(null, null, null) });
+                    if (!res.ok) return;
+
+                    const data = await res.json();
+                    updateStatusBadge(data.status);
+                    
+                    if (data.status === "running" && data.partial_sources) {
+                        const logDiv = document.getElementById("liveProgressLog");
+                        let newLogs = false;
+                        
+                        if (!window.seenSources) window.seenSources = new Set();
+                        
+                        data.partial_sources.forEach(src => {
+                            if (!window.seenSources.has(src.url)) {
+                                window.seenSources.add(src.url);
+                                const entry = document.createElement("div");
+                                entry.innerHTML = `<span style="color: #c084fc;">[Round ${src.round_number}]</span> Extracted facts from: <a href="${src.url}" target="_blank" style="color: #94a3b8; text-decoration: none;">${src.title.substring(0, 50)}...</a>`;
+                                logDiv.appendChild(entry);
+                                newLogs = true;
+                            }
+                        });
+                        
+                        if (newLogs) {
+                            logDiv.scrollTop = logDiv.scrollHeight;
+                        }
+                    }
+
+                    if (data.status === "completed") {
+                        clearInterval(pollInterval);
+                        showReport(data);
+                    } else if (data.status === "failed") {
+                        clearInterval(pollInterval);
+                        alert(`Research pipeline failed: ${data.error || "Unknown error"}`);
+                        resetConsole();
+                    } else if (data.status === "cancelled") {
+                        clearInterval(pollInterval);
+                        alert("Research job was cancelled.");
+                        resetConsole();
+                    }
+                } catch (err) {
+                    console.error("Error polling job: ", err);
+                }
+            }, 3000);
+        }
+
+        async function cancelResearch() {
+            if (!currentJobId) return;
+            document.getElementById("cancelBtn").disabled = true;
+
+            const url = `${getBaseUrl()}/v1/research/${currentJobId}`;
+            try {
+                const res = await fetch(url, {
+                    method: "DELETE",
+                    headers: getAuthHeaders(null, null, null)
+                });
+                if (res.ok) {
+                    clearInterval(pollInterval);
+                    alert("Job cancellation requested.");
+                    resetConsole();
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to cancel: ${err.detail}`);
+                    document.getElementById("cancelBtn").disabled = false;
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+                document.getElementById("cancelBtn").disabled = false;
+            }
+        }
+
+        function showReport(jobData) {
+            document.getElementById("progressCard").style.display = "none";
+            document.getElementById("reportCard").style.display = "block";
+
+            const report = jobData.report;
+            document.getElementById("summaryText").textContent = report.summary;
+            document.getElementById("reportHTML").innerHTML = marked.parse(report.body_md);
+
+            // Populate citations
+            const container = document.getElementById("sourcesContainer");
+            container.innerHTML = "";
+            if (report.citations && report.citations.length > 0) {
+                report.citations.forEach((url, i) => {
+                    const div = document.createElement("div");
+                    div.className = "source-item";
+                    div.innerHTML = `<span class="source-index">[${i + 1}]</span><a href="${url}" target="_blank">${url}</a>`;
+                    container.appendChild(div);
+                });
+            } else {
+                container.innerHTML = "<p style='color: var(--text-muted); font-size: 0.95rem;'>No citations recorded.</p>";
+            }
+
+            // Bind download button
+            window.currentReportMarkdown = report.body_md;
+            window.currentReportId = report.id;
+        }
+
+        function downloadReport() {
+            if (!window.currentReportMarkdown) return;
+            const blob = new Blob([window.currentReportMarkdown], { type: "text/markdown" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `report-${window.currentReportId || "export"}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function resetConsole() {
+            if (pollInterval) clearInterval(pollInterval);
+            currentJobId = null;
+            window.currentReportMarkdown = null;
+            window.currentReportId = null;
+            window.seenSources = new Set();
+            document.getElementById("liveProgressLog").innerHTML = '';
+
+            document.getElementById("progressCard").style.display = "none";
+            document.getElementById("reportCard").style.display = "none";
+            document.getElementById("queryCard").style.display = "block";
+            document.getElementById("submitBtn").disabled = false;
+            document.getElementById("queryText").value = "";
+        }
+    </script>
+</body>
+</html>

@@ -7,12 +7,18 @@ async def call_openai(messages: list[Message], config: LLMConfig) -> LLMResponse
     if config.api_key:
         headers["Authorization"] = f"Bearer {config.api_key}"
 
+    if config.provider == "openrouter":
+        headers["HTTP-Referer"] = "https://github.com/deepresearch"
+        headers["X-Title"] = "Deep Research API"
+
     payload = {
         "model": config.model,
         "messages": [{"role": m.role, "content": m.content} for m in messages],
         "temperature": config.temperature,
-        "max_tokens": config.max_tokens,
     }
+    
+    if config.max_tokens is not None:
+        payload["max_tokens"] = config.max_tokens
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         response = await client.post(
