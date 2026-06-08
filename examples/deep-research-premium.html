@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Research Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0f0f11;
+            --surface-color: #1a1a1e;
+            --primary-text: #f0f0f0;
+            --secondary-text: #a0a0a5;
+            --accent-color: #d17a58;
+            --border-color: #2a2a30;
+            --chat-bg: #1c1c21;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--primary-text);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Input Modal */
+        #inputModal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            padding: 40px;
+            border-radius: 16px;
+            width: 400px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+            animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(40px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-content h2 {
+            font-family: 'Outfit', sans-serif;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 24px;
+        }
+
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        button.primary-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button.primary-btn:hover {
+            opacity: 0.9;
+        }
+
+        button.primary-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Main App Layout */
+        .sidebar {
+            width: 250px;
+            border-right: 1px solid var(--border-color);
+            padding: 40px 20px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 80px;
+            display: none;
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        .app-header {
+            text-align: center;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--secondary-text);
+            margin-bottom: 60px;
+        }
+
+        /* Report Typography */
+        .report-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .report-container h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            line-height: 1.2;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .metadata-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            font-size: 12px;
+            color: var(--secondary-text);
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 0;
+            margin-bottom: 60px;
+        }
+
+        .metadata-bar span strong {
+            color: var(--primary-text);
+            margin-right: 4px;
+        }
+
+        .markdown-body {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            line-height: 1.8;
+            color: #dcdcdc;
+        }
+
+        .markdown-body h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            margin-top: 60px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            color: white;
+        }
+
+        .markdown-body h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            margin-top: 40px;
+            color: white;
+        }
+
+        /* Dropcap effect for first paragraph */
+        .markdown-body > p:first-of-type::first-letter {
+            font-size: 64px;
+            float: left;
+            margin-right: 12px;
+            margin-top: -8px;
+            color: var(--accent-color);
+            line-height: 1;
+        }
+
+        .markdown-body a {
+            color: var(--accent-color);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent-color);
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 32px 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+        }
+
+        .markdown-body th, .markdown-body td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: rgba(255,255,255,0.02);
+            color: white;
+        }
+
+        /* Table of Contents in Sidebar */
+        .toc-item {
+            font-size: 13px;
+            color: var(--secondary-text);
+            margin-bottom: 16px;
+            cursor: pointer;
+            transition: color 0.2s;
+            line-height: 1.4;
+        }
+        .toc-item:hover { color: var(--primary-text); }
+        .toc-h2 { margin-left: 0; font-weight: 500; }
+        .toc-h3 { margin-left: 12px; }
+
+        /* Floating Chat Widget */
+        .chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 500;
+            display: none;
+        }
+
+        .chat-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 30px;
+            background: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            cursor: pointer;
+            border: none;
+            transition: transform 0.2s;
+        }
+
+        .chat-button:hover { transform: scale(1.05); }
+
+        .chat-panel {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 500px;
+            background: var(--chat-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .close-chat { cursor: pointer; color: var(--secondary-text); }
+
+        .chat-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg { padding: 12px 16px; border-radius: 12px; max-width: 85%; line-height: 1.5; }
+        .msg.user { background: rgba(255,255,255,0.05); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .msg.assistant { background: rgba(209, 122, 88, 0.1); border: 1px solid rgba(209, 122, 88, 0.2); align-self: flex-start; border-bottom-left-radius: 4px; }
+
+        .chat-input {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 8px;
+        }
+
+        .chat-input input { margin-bottom: 0; background: rgba(0,0,0,0.2); }
+        .chat-input button { width: auto; padding: 0 16px; }
+
+        .export-btn {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .export-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--accent-color);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Setup Modal -->
+    <div id="inputModal">
+        <div class="modal-content">
+            <h2>New Deep Research</h2>
+            <p style="color: #a0a0a5; font-size: 14px; margin-bottom: 24px;">Enter your API key and research query to begin.</p>
+            
+            <input type="password" id="apiKey" placeholder="OpenRouter API Key (sk-or-v1...)">
+            <input type="text" id="query" placeholder="E.g., AI breakthroughs since 2020..." onkeypress="if(event.key === 'Enter') startResearch()">
+            
+            <button id="submitBtn" class="primary-btn" onclick="startResearch()">Start Research</button>
+            <div id="statusText" style="margin-top: 16px; font-size: 13px; color: var(--accent-color); text-align: center;"></div>
+        </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="sidebar" id="sidebar">
+        <!-- TOC dynamically injected here -->
+    </div>
+
+    <div class="main-content" id="mainContent">
+        <button class="export-btn" onclick="exportReport()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Export
+        </button>
+        <div class="app-header">DEEP RESEARCH REPORT</div>
+        
+        <div class="report-container">
+            <h1 id="reportTitle">Loading...</h1>
+            
+            <div class="metadata-bar" id="metadataBar">
+                <!-- Metadata injected here -->
+            </div>
+
+            <div class="markdown-body" id="reportBody">
+                <!-- Report content injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Widget -->
+    <div class="chat-widget" id="chatWidget">
+        <button class="chat-button" onclick="toggleChat()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        </button>
+        <div class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                Discuss Report
+                <span class="close-chat" onclick="toggleChat()">×</span>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="msg assistant">Hello! I have full context of this research report. What would you like to know?</div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInputBox" placeholder="Ask a question..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button class="primary-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let currentApiKey = null;
+        let chatHistory = [];
+        let currentReportMarkdown = "";
+
+        async function startResearch() {
+            const apiKey = document.getElementById("apiKey").value.trim();
+            const query = document.getElementById("query").value.trim();
+            const statusText = document.getElementById("statusText");
+            const submitBtn = document.getElementById("submitBtn");
+
+            if (!apiKey || !query) {
+                statusText.innerText = "Please provide both an API Key and a Query.";
+                return;
+            }
+
+            statusText.innerText = "Initializing research agent...";
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Connecting...";
+            currentApiKey = apiKey;
+
+            try {
+                const response = await fetch("http://localhost:8000/v1/research", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        'X-Provider': 'openrouter',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        max_rounds: 3,
+                        priority: 3
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                currentJobId = data.id;
+                
+                // Start Polling
+                submitBtn.innerText = "Agent is researching...";
+                pollJobStatus(currentJobId, apiKey);
+
+            } catch (err) {
+                statusText.innerText = err.message;
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Start Research";
+            }
+        }
+
+        async function pollJobStatus(jobId, apiKey) {
+            const statusText = document.getElementById("statusText");
+            const submitBtn = document.getElementById("submitBtn");
+            let isPolling = true;
+
+            while (isPolling) {
+                try {
+                    const response = await fetch(`http://localhost:8000/v1/research/${jobId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'X-Provider': 'openrouter',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch status");
+                    }
+
+                    const jobInfo = await response.json();
+
+                    if (jobInfo.status === "failed") {
+                        statusText.innerText = `Research failed: ${jobInfo.error}`;
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Start Research";
+                        isPolling = false;
+                        break;
+                    }
+
+                    if (jobInfo.status === "completed") {
+                        statusText.innerText = "Research complete! Rendering report...";
+                        
+                        // Render report and transition UI
+                        renderReport(jobInfo);
+                        document.getElementById("inputModal").style.display = "none";
+                        document.getElementById("sidebar").style.display = "block";
+                        document.getElementById("mainContent").style.display = "block";
+                        document.getElementById("chatWidget").style.display = "block";
+                        
+                        isPolling = false;
+                        break;
+                    }
+
+                    // Still running
+                    const rounds = jobInfo.rounds_completed || 0;
+                    statusText.innerText = `Synthesizing sources... (Round ${rounds}/3)`;
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+
+                } catch (error) {
+                    console.error("Polling error", error);
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // wait and retry
+                }
+            }
+        }
+
+        function renderReport(data) {
+            // Extract the title (first H1) and remove it from the body so we can style it uniquely
+            currentReportMarkdown = data.report.body_md;
+            let rawMarkdown = data.report.body_md;
+            const titleMatch = rawMarkdown.match(/^#\s+(.+)/m);
+            const title = titleMatch ? titleMatch[1] : "Research Report";
+            
+            // Remove the H1 from markdown so it doesn't double-render
+            rawMarkdown = rawMarkdown.replace(/^#\s+(.+)\n*/m, '');
+            
+            document.getElementById("reportTitle").innerText = title;
+
+            // Render Metadata
+            const metaBar = document.getElementById("metadataBar");
+            const duration = data.finished_at && data.started_at 
+                ? ((new Date(data.finished_at) - new Date(data.started_at)) / 1000).toFixed(1) + "s" 
+                : "N/A";
+            
+            metaBar.innerHTML = `
+                <span><strong>${duration}</strong> Duration</span>
+                <span><strong>${data.rounds_completed || 1}</strong> Rounds</span>
+                <span><strong>${data.partial_sources ? data.partial_sources.length : 0}</strong> Sources</span>
+            `;
+
+            // Render Markdown
+            const htmlContent = DOMPurify.sanitize(marked.parse(rawMarkdown));
+            const reportBody = document.getElementById("reportBody");
+            reportBody.innerHTML = htmlContent;
+
+            // Generate Table of Contents
+            const sidebar = document.getElementById("sidebar");
+            sidebar.innerHTML = '<div style="font-family: \'Outfit\', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 24px; color: white;">Contents</div>';
+            
+            const headings = reportBody.querySelectorAll('h2, h3');
+            headings.forEach((heading, index) => {
+                const id = `heading-${index}`;
+                heading.id = id;
+                
+                const div = document.createElement('div');
+                div.className = `toc-item ${heading.tagName.toLowerCase() === 'h2' ? 'toc-h2' : 'toc-h3'}`;
+                div.innerText = heading.innerText;
+                div.onclick = () => {
+                    heading.scrollIntoView({ behavior: 'smooth' });
+                };
+                sidebar.appendChild(div);
+            });
+        }
+
+        function toggleChat() {
+            const panel = document.getElementById("chatPanel");
+            panel.style.display = panel.style.display === "flex" ? "none" : "flex";
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("chatInputBox");
+            const message = input.value.trim();
+            if (!message) return;
+
+            input.value = '';
+            appendMessage('user', message);
+
+            const messagesDiv = document.getElementById("chatMessages");
+            const loadingId = "loading-" + Date.now();
+            
+            // Add loading indicator
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'msg assistant';
+            loadingMsg.id = loadingId;
+            loadingMsg.innerHTML = '<span style="opacity: 0.5">Thinking...</span>';
+            messagesDiv.appendChild(loadingMsg);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            try {
+                const response = await fetch(`http://localhost:8000/v1/research/${currentJobId}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentApiKey}`,
+                        'X-Provider': 'openrouter',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        history: chatHistory,
+                        provider: 'openrouter',
+                        api_key: currentApiKey
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                // Remove loading indicator
+                document.getElementById(loadingId).remove();
+                
+                // Render assistant message
+                appendMessage('assistant', result.response);
+
+                // Add to history
+                chatHistory.push({ role: 'user', content: message });
+                chatHistory.push({ role: 'assistant', content: result.response });
+
+            } catch (err) {
+                document.getElementById(loadingId).remove();
+                appendMessage('assistant', `*Error: ${err.message}*`);
+            }
+        }
+
+        function appendMessage(role, text) {
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            div.innerHTML = role === 'assistant' ? DOMPurify.sanitize(marked.parseInline(text)) : text;
+            
+            const messagesDiv = document.getElementById("chatMessages");
+            messagesDiv.appendChild(div);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function exportReport() {
+            if (!currentReportMarkdown) return;
+            
+            let exportContent = currentReportMarkdown;
+            
+            if (chatHistory.length > 0) {
+                exportContent += "\n\n---\n\n## Discussion Notes\n\n";
+                for (const msg of chatHistory) {
+                    const speaker = msg.role === 'user' ? 'You' : 'Assistant';
+                    exportContent += `**${speaker}:**\n${msg.content}\n\n`;
+                }
+            }
+
+            const blob = new Blob([exportContent], { type: 'text/markdown' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `deep_research_${currentJobId || 'report'}.md`;
+            document.body.appendChild(a);
+            a.click();
+            
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

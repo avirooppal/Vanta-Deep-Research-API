@@ -20,12 +20,22 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Deep Research API",
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url=None,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Middleware order: audit runs outermost (wraps auth), auth runs before routes

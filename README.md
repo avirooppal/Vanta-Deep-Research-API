@@ -2,8 +2,8 @@
 
 Welcome to the **Deep Research API**, a self-hosted, privacy-first Research-as-a-Service API. It exposes a single-purpose REST API and a beautiful web UI: given a query, it runs a multi-round loop (plan queries → search → fetch webpages → extract facts → synthesize findings) and generates a structured, cited report, running entirely inside your infrastructure.
 
-### New: Bring Your Own Key (BYOK)
-You can now use the Deep Research API instantly without setting up a multi-tenant organization. Just paste your own **OpenAI, Anthropic, Gemini, or OpenRouter** API Key directly into the UI!
+### New: Bring Your Own Key (BYOK) & Premium UI
+You can now use the Deep Research API instantly without setting up a multi-tenant organization. Just open `examples/deep-research-premium.html` in your browser, paste your own **OpenAI, Anthropic, Gemini, or OpenRouter** API Key directly into the UI, and start an end-to-end research loop with an interactive chat feature!
 ---
 
 ## 1. Folder Structure
@@ -141,6 +141,17 @@ Include your API key as a Bearer token in the `Authorization` header: `Authoriza
 ### Export Report Markdown
 - **Endpoint**: `GET /v1/reports/{report_id}/export?format=md`
 - **Response**: Plaintext markdown attachment download.
+
+### Chat with Report
+- **Endpoint**: `POST /v1/research/{job_id}/chat`
+- **Request Body**:
+  ```json
+  {
+    "message": "What does the report say about AlphaFold?",
+    "history": [{"role": "user", "content": "..."}, {"role": "assistant", "content": "..."}]
+  }
+  ```
+- **Response**: `{"response": "Based on the report, AlphaFold..."}`
 
 ### Cancel Job Execution
 - **Endpoint**: `DELETE /v1/research/{job_id}`

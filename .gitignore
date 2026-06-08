@@ -1,4 +1,5 @@
 .env
+.env.*
 __pycache__/
 *.pyc
 .pytest_cache/
@@ -8,3 +9,9 @@ dist/
 .venv/
 venv/
 uv.lock
+*.db
+*.sqlite3
+.DS_Store
+*.log
+coverage/
+.coverage

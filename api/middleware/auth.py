@@ -13,7 +13,7 @@ _PUBLIC_PATHS = {"/", "/health", "/health/ready", "/health/live", "/docs", "/ope
 
 async def auth_middleware(request: Request, call_next):
     path = request.url.path.rstrip("/")
-    if path == "" or path in _PUBLIC_PATHS:
+    if path == "" or path in _PUBLIC_PATHS or request.method == "OPTIONS":
         return await call_next(request)
 
 

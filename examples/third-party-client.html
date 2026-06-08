@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SaaS Product - Example Integration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+        
+        .container:hover { transform: translateY(-5px); }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        button:hover {
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+            transform: translateY(-2px);
+        }
+
+        button:active { transform: translateY(0); }
+        button:disabled { background: #475569; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .status-box {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px dashed rgba(255,255,255,0.1);
+            display: none;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-queued { background: #f59e0b20; color: #fbd38d; }
+        .status-running { background: #3b82f620; color: #93c5fd; animation: pulse 2s infinite; }
+        .status-completed { background: #10b98120; color: #6ee7b7; }
+        .status-failed { background: #ef444420; color: #fca5a5; }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        #reportOutput {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #0f172a;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Market Research Tool</h1>
+        <p class="subtitle">An example 3rd-party product leveraging the Deep Research API behind the scenes.</p>
+
+        <div class="form-group">
+            <label>API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-...">
+        </div>
+        
+        <div class="form-group">
+            <label>What do you want to research?</label>
+            <textarea id="query" rows="3" placeholder="e.g. Latest advancements in solid-state EV batteries"></textarea>
+        </div>
+
+        <button id="submitBtn" onclick="startResearch()">Start Research Agent</button>
+
+        <div class="status-box" id="statusBox">
+            <div><strong>Job ID:</strong> <span id="jobIdDisplay"></span></div>
+            <div><strong>Status:</strong> <span id="statusBadge" class="status-badge"></span></div>
+            <div id="reportOutput" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = "http://localhost:8000/v1";
+        let pollInterval = null;
+
+        async function startResearch() {
+            const apiKey = document.getElementById("apiKey").value.trim();
+            const query = document.getElementById("query").value.trim();
+            const submitBtn = document.getElementById("submitBtn");
+
+            if (!apiKey || !query) {
+                alert("Please provide an API key and a search query.");
+                return;
+            }
+
+            // UI Reset
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Dispatching Agent...";
+            document.getElementById("statusBox").style.display = "flex";
+            document.getElementById("jobIdDisplay").innerText = "Generating...";
+            document.getElementById("reportOutput").style.display = "none";
+            
+            // 1. Send the POST Request to Deep Research API
+            try {
+                const response = await fetch(`${API_BASE_URL}/research`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${apiKey}`,
+                        "X-Provider": "openrouter" // Defaulting to OpenRouter for this example
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        max_rounds: 2, // A quick search loop
+                        priority: 1
+                    })
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    throw new Error(err.error || response.statusText);
+                }
+
+                const data = await response.json();
+                document.getElementById("jobIdDisplay").innerText = data.id;
+                
+                // 2. Start Polling for Status Updates
+                submitBtn.innerText = "Agent is working...";
+                pollJobStatus(data.id, apiKey);
+
+            } catch (error) {
+                alert("Failed to start research: " + error.message);
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Start Research Agent";
+            }
+        }
+
+        async function pollJobStatus(jobId, apiKey) {
+            const statusBadge = document.getElementById("statusBadge");
+
+            pollInterval = setInterval(async () => {
+                try {
+                    // Send GET Request to check job status
+                    const response = await fetch(`${API_BASE_URL}/research/${jobId}`, {
+                        headers: { "Authorization": `Bearer ${apiKey}` }
+                    });
+                    
+                    if (!response.ok) throw new Error("Failed to fetch status");
+                    
+                    const jobInfo = await response.json();
+                    
+                    // Update UI Badge
+                    statusBadge.innerText = jobInfo.status;
+                    statusBadge.className = `status-badge status-${jobInfo.status}`;
+
+                    if (jobInfo.status === "completed") {
+                        clearInterval(pollInterval);
+                        
+                        // Display the Final Report
+                        const reportDiv = document.getElementById("reportOutput");
+                        reportDiv.style.display = "block";
+                        reportDiv.innerText = jobInfo.report.body_md;
+                        
+                        // Reset Button
+                        const submitBtn = document.getElementById("submitBtn");
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Start Another Research";
+                    } else if (jobInfo.status === "failed") {
+                        clearInterval(pollInterval);
+                        alert("The background research worker failed to complete the task.");
+                        const submitBtn = document.getElementById("submitBtn");
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Try Again";
+                    }
+
+                } catch (error) {
+                    console.error("Polling error", error);
+                }
+            }, 3000); // Check every 3 seconds
+        }
+    </script>
+</body>
+</html>

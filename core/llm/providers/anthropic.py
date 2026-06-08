@@ -31,7 +31,7 @@ async def call_anthropic(messages: list[Message], config: LLMConfig) -> LLMRespo
         data = response.json()
 
     return LLMResponse(
-        content=data["content"][0]["text"],
+        content=data["content"][0].get("text") or "",
         model=data.get("model", config.model),
         tokens_in=data.get("usage", {}).get("input_tokens", 0),
         tokens_out=data.get("usage", {}).get("output_tokens", 0),

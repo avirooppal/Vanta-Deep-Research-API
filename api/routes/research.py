@@ -11,7 +11,8 @@ from db.models.report import Report
 from db.models.source import Source
 from arq import create_pool
 from core.queue.worker import get_redis_settings
-
+from core.llm.client import LLMClient
+from core.llm.types import LLMConfig, Message as LLMMessage
 router = APIRouter(prefix="/v1", tags=["research"])
 
 
@@ -32,6 +33,19 @@ class ResearchResponse(BaseModel):
     status: str
     query: str
     created_at: str
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+class ChatRequest(BaseModel):
+    message: str
+    history: list[ChatMessage] = []
+    provider: Optional[str] = None
+    api_key: Optional[str] = None
+    base_url: Optional[str] = None
+    model: Optional[str] = None
 
 
 @router.post("/research", response_model=ResearchResponse, status_code=202)
@@ -166,3 +180,59 @@ async def cancel_research_job(job_id: str, request: Request):
 
         job.status = "cancelled"
         job.finished_at = datetime.now(timezone.utc)
+
+@router.post("/research/{job_id}/chat")
+async def chat_with_report(job_id: str, body: ChatRequest, request: Request):
+    org_id = request.state.org_id
+
+    async with get_db_session() as db:
+        job = await db.get(ResearchJob, job_id)
+        if not job or job.org_id != org_id:
+            raise HTTPException(status_code=404, detail="Job not found")
+            
+        result = await db.execute(select(Report).where(Report.job_id == job_id))
+        report = result.scalar_one_or_none()
+        
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not yet generated for this job")
+
+    transient_backend = getattr(request.state, "transient_backend", None)
+    final_backend = transient_backend.copy() if transient_backend else {}
+    if body.provider:
+        final_backend["provider"] = body.provider
+    if body.api_key:
+        final_backend["api_key"] = body.api_key
+    if body.base_url:
+        final_backend["base_url"] = body.base_url
+    if body.model:
+        final_backend["model"] = body.model
+
+    if not final_backend:
+        raise HTTPException(status_code=401, detail="No LLM backend configuration found")
+
+    config = LLMConfig(
+        provider=final_backend.get("provider", "openai"),
+        api_key=final_backend.get("api_key"),
+        base_url=final_backend.get("base_url"),
+        model=final_backend.get("model", "gpt-4o"),
+        temperature=0.7
+    )
+    llm = LLMClient(config)
+
+    system_prompt = (
+        "[Research context — 2026-06-08]\n"
+        "The user previously ran a deep research investigation. "
+        "Use the report below as your primary knowledge base when answering follow-up questions. "
+        "If the user asks something not covered, say so plainly rather than guessing.\n\n"
+        "=== ORIGINAL QUERY ===\n" + job.query + "\n\n"
+        "=== REPORT ===\n" + report.content_md
+    )
+
+    messages = [LLMMessage(role="system", content=system_prompt)]
+    for msg in body.history:
+        messages.append(LLMMessage(role=msg.role, content=msg.content))
+    messages.append(LLMMessage(role="user", content=body.message))
+
+    llm_response = await llm.complete(messages)
+
+    return {"response": llm_response.content}
