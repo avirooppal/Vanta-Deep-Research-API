@@ -31,6 +31,7 @@ const features = [
 ];
 
 const deploySnippet = `git clone https://github.com/avirooppal/Vanta-Deep-Research-API
+cd Vanta-Deep-Research-API
 cp .env.example .env
 cd Vanta-Deep-Research-API/deploy
 docker compose up -d --build`;
