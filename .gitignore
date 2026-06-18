@@ -16,3 +16,7 @@ uv.lock
 coverage/
 .coverage
 deploy/.env
+
+# Internal design docs
+architecture*.md
+tasks.md
