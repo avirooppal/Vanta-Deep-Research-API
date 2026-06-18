@@ -201,7 +201,7 @@ async def test_worker_task_handles_transient_backend():
     with ExitStack() as stack:
         stack.enter_context(patch("core.queue.tasks.get_db_session", side_effect=lambda: _ctx(db_session)))
         mock_llm_client_class = stack.enter_context(patch("core.queue.tasks.LLMClient", return_value=mock_llm_client_instance))
-        mock_run_research = stack.enter_context(patch("core.queue.tasks.run_research", AsyncMock(return_value=mock_report)))
+        stack.enter_context(patch("core.queue.tasks.run_research", AsyncMock(return_value=mock_report)))
 
         await run_research_job({}, "job_transient_test")
 

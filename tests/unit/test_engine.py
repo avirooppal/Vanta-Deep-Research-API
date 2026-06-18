@@ -2,7 +2,6 @@ import pytest
 import asyncio
 from unittest.mock import AsyncMock, patch
 from core.research.engine import run_research
-from core.research.extractor import Finding
 from core.research.synthesizer import ReportOutput
 from core.llm.types import LLMResponse
 from integrations.searxng import SearchResult

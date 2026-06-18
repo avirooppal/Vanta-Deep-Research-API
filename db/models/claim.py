@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import String, Text, Integer, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from pgvector.sqlalchemy import Vector
 from db.engine import Base
 

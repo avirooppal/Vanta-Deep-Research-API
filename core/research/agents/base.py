@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 from core.llm.client import LLMClient
 from core.llm.types import Message as LLMMessage
 from core.research.agents.tools import ToolRegistry

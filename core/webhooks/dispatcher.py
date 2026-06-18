@@ -19,7 +19,7 @@ async def fire_webhook(job_id: str, event_type: str) -> None:
 
         # Get all active webhooks
         stmt = select(WebhookEndpoint).where(
-            WebhookEndpoint.is_active == True
+            WebhookEndpoint.is_active
         )
         result = await db.execute(stmt)
         endpoints = result.scalars().all()

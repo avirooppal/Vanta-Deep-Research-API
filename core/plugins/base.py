@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Dict, List
 from abc import ABC, abstractmethod
 
 class BaseSearchPlugin(ABC):

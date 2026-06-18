@@ -4,7 +4,6 @@ import asyncio
 import httpx
 import logging
 from datetime import datetime, timezone
-from sqlalchemy import select
 from db.session import get_db_session
 from db.models.research_job import ResearchJob
 from db.models.report import Report

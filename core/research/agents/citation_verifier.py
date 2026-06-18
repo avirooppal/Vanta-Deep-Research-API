@@ -1,5 +1,4 @@
 from core.llm.client import LLMClient
-from core.llm.types import Message
 from core.research.state import ResearchState
 from core.research.agents.synthesizer import ReportOutput
 from core.research.agents.base import BaseAgent
