@@ -31,4 +31,6 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 
 [dependency-groups]
-dev = []
+dev = [
+    "ruff>=0.15.17",
+]
