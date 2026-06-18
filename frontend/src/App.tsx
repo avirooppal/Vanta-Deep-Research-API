@@ -31,8 +31,8 @@ const features = [
 ];
 
 const deploySnippet = `git clone https://github.com/avirooppal/Vanta-Deep-Research-API
-cd Vanta-Deep-Research-API/deploy
 cp .env.example .env
+cd Vanta-Deep-Research-API/deploy
 docker compose up -d --build`;
 
 const cliSnippet = `uv run python cli.py submit "What are the latest advancements in solid-state batteries?" \\
