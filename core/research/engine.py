@@ -1,28 +1,30 @@
 import asyncio
-from dataclasses import dataclass, field
 from typing import Callable, Awaitable
 from core.llm.client import LLMClient
-from core.research.planner import plan_queries
-from core.research.extractor import extract_findings, Finding
-from core.research.synthesizer import should_continue, synthesize_report, ReportOutput
+from core.research.state import ResearchState, ValidatedSource, Finding
+from core.research.agents.coordinator import CoordinatorAgent
+from core.research.agents.search import SearchAgent
+from core.research.agents.validator import ValidatorAgent
+from core.research.agents.extractor import ExtractorAgent
+from core.research.agents.contradiction import ContradictionAgent
+from core.research.agents.synthesizer import SynthesizerAgent
+from core.research.agents.citation_verifier import CitationVerifierAgent
 from integrations.searxng import search_searxng
 from integrations.fetcher import fetch_url
 from core.config import settings
 
-
-@dataclass
 class RoundResult:
-    round_number: int
-    new_findings: list[Finding]
-    total_findings: int
-
+    def __init__(self, round_number: int, new_findings: list[Finding], total_findings: int, progress_pct: int, sources: list[ValidatedSource]):
+        self.round_number = round_number
+        self.new_findings = new_findings
+        self.total_findings = total_findings
+        self.progress_pct = progress_pct
+        self.sources = sources
 
 ProgressCallback = Callable[[RoundResult], Awaitable[None]]
 
-
 async def _noop_progress(result: RoundResult) -> None:
     pass
-
 
 async def run_research(
     question: str,
@@ -31,21 +33,43 @@ async def run_research(
     max_rounds: int = 3,
     on_progress: ProgressCallback = _noop_progress,
     cancelled: asyncio.Event | None = None,
-) -> ReportOutput:
-    all_findings: list[Finding] = []
+    job_id: str | None = None,
+):
+    state = ResearchState(question=question, max_rounds=max_rounds)
     sem = asyncio.Semaphore(settings.extraction_concurrency)
+    
+    from core.research.memory import MemoryStore
+    memory = MemoryStore(job_id=job_id, llm=llm) if job_id else None
 
-    for round_n in range(1, max_rounds + 1):
+    # Instantiate Agents
+    coordinator_agent = CoordinatorAgent(llm)
+    search_agent = SearchAgent(llm)
+    validator_agent = ValidatorAgent(llm)
+    extractor_agent = ExtractorAgent(llm)
+    contradiction_agent = ContradictionAgent(llm)
+    synthesizer_agent = SynthesizerAgent(llm)
+    citation_verifier_agent = CitationVerifierAgent(llm)
+
+    while not state.is_done:
         if cancelled and cancelled.is_set():
             break
 
-        queries = await plan_queries(question, llm)
+        # 1. Coordinator decides next step
+        decision = await coordinator_agent.run(state)
+        
+        if decision == "SYNTHESIZE":
+            break
+
+        # 2. Search Agent
+        queries = await search_agent.run(state)
         llm.search_queries_issued += len(queries)
+        state.queries.extend(queries)
+        
         search_tasks = [search_searxng(q, searxng_url, num_results=5) for q in queries]
         search_results_nested = await asyncio.gather(*search_tasks, return_exceptions=True)
 
-        urls: list[str] = []
-        seen: set[str] = {f.url for f in all_findings}
+        urls = []
+        seen = {f.url for f in state.findings}
         for result_list in search_results_nested:
             if isinstance(result_list, list):
                 for r in result_list:
@@ -53,30 +77,54 @@ async def run_research(
                         urls.append(r.url)
                         seen.add(r.url)
 
-        async def fetch_and_extract(url: str) -> Finding | None:
+        # 3. Fetch -> Validator -> Extractor pipeline
+        async def process_url(url: str):
             async with sem:
                 page = await fetch_url(url)
-                if page.success:
-                    llm.sources_fetched += 1
-                return await extract_findings(page, question, llm, round_n)
+                if not page.success:
+                    return None
+                llm.sources_fetched += 1
+                
+                # Validator Agent
+                validated_source = await validator_agent.run(page)
+                if validated_source.trust_score < 30:
+                    return None  # Skip low trust sources
+                    
+                # Extractor Agent
+                findings = await extractor_agent.run(validated_source, question, state.current_round, memory)
+                return (validated_source, findings)
 
+        extract_tasks = [process_url(url) for url in urls[:15]]
+        results = await asyncio.gather(*extract_tasks, return_exceptions=True)
+        
+        new_findings = []
+        new_sources = []
+        for r in results:
+            if isinstance(r, tuple):
+                source, findings = r
+                new_sources.append(source)
+                new_findings.extend(findings)
+                
+        state.sources.extend(new_sources)
+        state.findings.extend(new_findings)
 
-        extract_tasks = [fetch_and_extract(url) for url in urls[:15]]
-        raw_findings = await asyncio.gather(*extract_tasks, return_exceptions=True)
+        # 4. Contradiction Agent
+        state.contradictions = await contradiction_agent.run(state)
 
-        new_findings = [f for f in raw_findings if isinstance(f, Finding) and f is not None]
-        all_findings.extend(new_findings)
-
+        # 5. Progress Report
         await on_progress(RoundResult(
-            round_number=round_n,
+            round_number=state.current_round,
             new_findings=new_findings,
-            total_findings=len(all_findings),
+            total_findings=len(state.findings),
+            progress_pct=int((state.current_round / max_rounds) * 90),
+            sources=new_sources
         ))
 
-        if all_findings and not await should_continue(question, all_findings, llm):
-            break
+        state.current_round += 1
 
-    if not all_findings:
+    # 6. Synthesis Agent
+    from core.research.agents.synthesizer import ReportOutput
+    if not state.findings:
         return ReportOutput(
             query=question,
             summary="No findings could be gathered for this query.",
@@ -84,4 +132,9 @@ async def run_research(
             citations=[],
         )
 
-    return await synthesize_report(question, all_findings, llm)
+    report = await synthesizer_agent.run(state)
+    
+    # 7. Citation Verifier Agent
+    report = await citation_verifier_agent.run(state, report)
+    
+    return report

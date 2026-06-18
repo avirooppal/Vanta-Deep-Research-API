@@ -152,7 +152,7 @@
 
     <div class="container">
         <h1>Market Research Tool</h1>
-        <p class="subtitle">An example 3rd-party product leveraging the Deep Research API behind the scenes.</p>
+        <p class="subtitle">An example 3rd-party product leveraging Vanta behind the scenes.</p>
 
         <div class="form-group">
             <label>API Key</label>
@@ -194,7 +194,7 @@
             document.getElementById("jobIdDisplay").innerText = "Generating...";
             document.getElementById("reportOutput").style.display = "none";
             
-            // 1. Send the POST Request to Deep Research API
+            // 1. Send the POST Request to Vanta
             try {
                 const response = await fetch(`${API_BASE_URL}/research`, {
                     method: "POST",

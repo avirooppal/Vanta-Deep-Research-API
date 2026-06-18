@@ -9,10 +9,7 @@ from db.session import get_db_session
 from db.models.research_job import ResearchJob
 from db.models.report import Report
 from db.models.source import Source
-from db.models.llm_backend import LLMBackend
 from db.models.usage_record import UsageRecord
-from db.models.api_key import APIKey
-from db.models.org import Org
 from core.llm.client import LLMClient
 from core.research.engine import run_research, RoundResult
 from core.config import settings
@@ -33,16 +30,43 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
                 cancel_event.set()
                 return
 
+            from db.models.claim import Claim
+
             for finding in result.new_findings:
+                source_id = f"src_{uuid.uuid4().hex[:12]}"
                 db.add(Source(
-                    id=f"src_{uuid.uuid4().hex[:12]}",
+                    id=source_id,
                     job_id=job_id,
-                    org_id=job_row.org_id,
                     url=finding.url,
                     title=finding.title,
-                    excerpt=finding.facts[:500],
+                    excerpt=finding.facts[:500] if isinstance(finding.facts, str) else str(finding.facts)[:500],
                     round_number=finding.round_number,
                 ))
+                await db.flush()
+
+                # Also save to EvidenceGraph (claims)
+                facts = finding.facts if isinstance(finding.facts, list) else [finding.facts]
+                for fact in facts:
+                    fact_str = str(fact)
+                    if llm:
+                        try:
+                            emb = await llm.embed(fact_str)
+                        except Exception:
+                            emb = None
+                    else:
+                        emb = None
+                        
+                    db.add(Claim(
+                        id=f"clm_{uuid.uuid4().hex[:12]}",
+                        job_id=job_id,
+                        source_id=source_id,
+                        fact=fact_str,
+                        embedding=emb,
+                        trust_score=finding.trust_score,
+                        contradicts_claim_id=finding.contradicts_claim_id
+                    ))
+
+            job_row.progress_pct = result.progress_pct
             await db.commit()
 
     try:
@@ -53,7 +77,7 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             job.status = "running"
             job.started_at = datetime.now(timezone.utc)
 
-            # Check if transient backend details are specified
+            # Load transient backend from metadata
             if job.metadata_json:
                 try:
                     meta = json.loads(job.metadata_json)
@@ -81,20 +105,10 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
                     logger.error(f"Failed to load transient backend: {e}")
 
             if not llm:
-                backend_result = await db.execute(
-                    select(LLMBackend).where(
-                        LLMBackend.org_id == job.org_id,
-                        LLMBackend.is_default == True,
-                    )
-                )
-                backend = backend_result.scalar_one_or_none()
-                if not backend:
-                    job.status = "failed"
-                    job.error = "No default LLM backend configured for this organisation"
-                    job.finished_at = datetime.now(timezone.utc)
-                    raise ValueError("No default LLM backend configured for this organisation")
-
-                llm = LLMClient.from_backend(backend)
+                job.status = "failed"
+                job.error = "No LLM backend configured. Pass your API key as Bearer token."
+                job.finished_at = datetime.now(timezone.utc)
+                return
 
             llm.total_tokens_in = 0
             llm.total_tokens_out = 0
@@ -115,24 +129,21 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             report = Report(
                 id=f"rpt_{uuid.uuid4().hex[:12]}",
                 job_id=job_id,
-                org_id=job.org_id,
                 summary=report_output.summary,
                 content_md=report_output.body_md,
                 content_json=json.dumps({"citations": report_output.citations}),
             )
             db.add(report)
 
-            # Sources are now inserted incrementally during on_progress
-
             job_row = await db.get(ResearchJob, job_id)
             job_row.status = "completed"
+            job_row.progress_pct = 100
             job_row.finished_at = datetime.now(timezone.utc)
 
             duration = int((job_row.finished_at - job_row.started_at).total_seconds()) if job_row.started_at else 0
             usage = UsageRecord(
                 id=f"usg_{uuid.uuid4().hex[:12]}",
                 job_id=job_id,
-                org_id=job_row.org_id,
                 tokens_in=llm.total_tokens_in,
                 tokens_out=llm.total_tokens_out,
                 sources_fetched=llm.sources_fetched,
@@ -157,7 +168,6 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
                     usage = UsageRecord(
                         id=f"usg_{uuid.uuid4().hex[:12]}",
                         job_id=job_id,
-                        org_id=job_row.org_id,
                         tokens_in=llm.total_tokens_in,
                         tokens_out=llm.total_tokens_out,
                         sources_fetched=llm.sources_fetched,
@@ -170,10 +180,11 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
         await fire_webhook(job_id, "research.failed")
 
 
-async def deliver_webhook_job(ctx: dict, url: str, payload: str, signature: str, attempt: int = 1) -> None:
+async def deliver_webhook_job(ctx: dict, url: str, payload: str, signature: str, timestamp: str = "", attempt: int = 1) -> None:
     headers = {
         "Content-Type": "application/json",
-        "X-Signature": signature,
+        "X-Webhook-Signature": signature,
+        "X-Webhook-Timestamp": timestamp,
         "User-Agent": "DeepResearchWebhook/1.0"
     }
 
@@ -195,9 +206,21 @@ async def deliver_webhook_job(ctx: dict, url: str, payload: str, signature: str,
                 url=url,
                 payload=payload,
                 signature=signature,
+                timestamp=timestamp,
                 attempt=attempt + 1,
                 _defer_by=delay
             )
             await redis.aclose()
         else:
             logger.error(f"Webhook delivery permanently failed to {url} after 5 attempts.")
+
+async def cleanup_audit_log(ctx: dict) -> None:
+    from db.models.audit_log import AuditLog
+    from sqlalchemy import delete
+    from datetime import timedelta
+    async with get_db_session() as db:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+        stmt = delete(AuditLog).where(AuditLog.timestamp < cutoff)
+        await db.execute(stmt)
+        await db.commit()
+    logger.info("Cleaned up audit logs older than 30 days")

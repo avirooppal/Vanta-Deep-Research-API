@@ -17,9 +17,8 @@ async def fire_webhook(job_id: str, event_type: str) -> None:
         if not job:
             return
 
-        # Get active webhooks for org
+        # Get all active webhooks
         stmt = select(WebhookEndpoint).where(
-            WebhookEndpoint.org_id == job.org_id,
             WebhookEndpoint.is_active == True
         )
         result = await db.execute(stmt)
@@ -32,11 +31,9 @@ async def fire_webhook(job_id: str, event_type: str) -> None:
             "event": event_type,
             "job_id": job.id,
             "status": job.status,
-            "org_id": job.org_id,
             "query": job.query,
             "created_at": job.created_at.isoformat() if job.created_at else None,
             "finished_at": job.finished_at.isoformat() if job.finished_at else None,
-            "metadata": json.loads(job.metadata_json) if job.metadata_json else {}
         }
 
         # If job has report, include report_url
@@ -54,13 +51,18 @@ async def fire_webhook(job_id: str, event_type: str) -> None:
         from core.queue.worker import get_redis_settings
         redis = await create_pool(get_redis_settings())
 
+        from core.security.encryption import decrypt
+        import time
+        timestamp = str(int(time.time()))
         for ep in endpoints:
-            sig = f"sha256={hmac_sign(payload_str, ep.secret)}"
+            decrypted_secret = decrypt(ep.secret)
+            sig = f"t={timestamp},v1={hmac_sign(payload_str, timestamp, decrypted_secret)}"
             await redis.enqueue_job(
                 "deliver_webhook_job",
                 url=ep.url,
                 payload=payload_str,
                 signature=sig,
+                timestamp=timestamp,
                 attempt=1,
                 _job_id=f"webhook_{job_id}_{ep.id}"
             )

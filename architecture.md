@@ -1,4 +1,4 @@
-# Deep Research API — Full Architecture Document
+# Vanta — Full Architecture Document
 
 > Self-hosted, privacy-first research-as-a-service built on the Odysseus IterResearch engine.  
 > Designed for enterprise deployment inside customer VPCs, air-gapped networks, and on-prem infra.

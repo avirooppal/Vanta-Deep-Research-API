@@ -92,14 +92,14 @@ def poll_job(base_url, api_key, job_id):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Deep Research API Developer CLI")
+    parser = argparse.ArgumentParser(description="Vanta Developer CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     submit_parser = subparsers.add_parser("submit", help="Submit a new research job")
     submit_parser.add_argument("query", type=str, help="The research question/query")
     submit_parser.add_argument("--max-rounds", type=int, default=3, help="Max iterations of research (1-5)")
     submit_parser.add_argument("--api-key", type=str, required=True, help="API Key for authorization")
-    submit_parser.add_argument("--api-url", type=str, default="http://localhost:8000", help="Base URL of the Deep Research API")
+    submit_parser.add_argument("--api-url", type=str, default="http://localhost:8000", help="Base URL of Vanta")
     submit_parser.add_argument("--output", type=str, default=None, help="Save the output markdown report to a file")
     submit_parser.add_argument("--provider", type=str, default=None, help="Optional LLM provider override")
     submit_parser.add_argument("--base-url", type=str, default=None, help="Optional LLM base URL override")

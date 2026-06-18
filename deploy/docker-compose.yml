@@ -2,7 +2,7 @@ version: "3.9"
 
 x-api-env: &api-env
   DATABASE_URL: postgresql+asyncpg://postgres:${PG_PASSWORD:-devpassword}@postgres:5432/drapi
-  REDIS_URL: redis://redis:6379/0
+  REDIS_URL: redis://:${REDIS_PASSWORD:-devredispass}@redis:6379/0
   SECRET_KEY: ${SECRET_KEY:-changeme-dev-secret-32chars-min}
   SEARXNG_URL: http://searxng:8080
   ENVIRONMENT: production
@@ -37,13 +37,16 @@ services:
     restart: unless-stopped
 
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_DB: drapi
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${PG_PASSWORD:-devpassword}
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata2:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -56,9 +59,9 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
-    command: redis-server --appendonly yes
+    command: redis-server --requirepass ${REDIS_PASSWORD:-devredispass} --appendonly yes
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-devredispass}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -72,6 +75,21 @@ services:
     ports:
       - "8085:8080"
 
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
 volumes:
-  pgdata:
+  pgdata2:
   redisdata:
+  caddy_data:
+  caddy_config:

@@ -9,7 +9,6 @@ class UsageRecord(Base):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     job_id: Mapped[str] = mapped_column(String, ForeignKey("research_jobs.id"), nullable=False, unique=True)
-    org_id: Mapped[str] = mapped_column(String, ForeignKey("orgs.id"), nullable=False)
     tokens_in: Mapped[int] = mapped_column(Integer, default=0)
     tokens_out: Mapped[int] = mapped_column(Integer, default=0)
     sources_fetched: Mapped[int] = mapped_column(Integer, default=0)

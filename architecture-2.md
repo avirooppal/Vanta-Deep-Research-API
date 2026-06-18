@@ -1,8 +1,8 @@
-# Deep Research API - What it is, How it's Used, & Execution Flow
-> A comprehensive guide to the Deep Research API: its purpose, use cases, and step-by-step operational walkthrough.
+# Vanta - What it is, How it's Used, & Execution Flow
+> A comprehensive guide to Vanta: its purpose, use cases, and step-by-step operational walkthrough.
 
 ## What It Is
-The **Deep Research API** is a self-hosted, privacy-first Research-as-a-Service system. Built on the Odysseus `IterResearch` engine, it exposes a single-purpose REST API designed for enterprise deployment inside customer VPCs, air-gapped networks, and on-premise infrastructure. It takes a natural language query and autonomously runs a multi-round iterative research loop (plan → search → fetch → extract → synthesize) to produce a structured, highly-cited final report. 
+**Vanta** is a self-hosted, privacy-first Research-as-a-Service system. Built on the Odysseus `IterResearch` engine, it exposes a single-purpose REST API designed for enterprise deployment inside customer VPCs, air-gapped networks, and on-premise infrastructure. It takes a natural language query and autonomously runs a multi-round iterative research loop (plan → search → fetch → extract → synthesize) to produce a structured, highly-cited final report. 
 
 It is designed entirely for system-to-system integration, featuring a headless API, robust webhook delivery, and tenant isolation, without any user-facing chat interfaces.
 

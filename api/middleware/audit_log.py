@@ -9,9 +9,6 @@ async def audit_log_middleware(request: Request, call_next):
     response = await call_next(request)
     duration_ms = int((time.monotonic() - start) * 1000)
 
-    org_id = getattr(request.state, "org_id", None)
-    api_key_id = getattr(request.state, "api_key_id", None)
-
     # Extract query text for research submissions only (set by route handler)
     query_text = None
     if request.url.path == "/v1/research" and request.method == "POST":
@@ -20,8 +17,6 @@ async def audit_log_middleware(request: Request, call_next):
     try:
         async with get_db_session() as db:
             log = AuditLog(
-                org_id=org_id,
-                api_key_id=api_key_id,
                 method=request.method,
                 path=request.url.path,
                 query_text=query_text,

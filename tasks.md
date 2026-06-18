@@ -1,4 +1,4 @@
-# Deep Research API — MVP Build Plan
+# Vanta — MVP Build Plan
 
 > Each task is a single unit of work with one concern, a clear start state, a clear end state, and an explicit test to verify completion before moving to the next task.
 > Pass tasks one at a time to your engineering LLM. Do not proceed to the next task until the test passes.
@@ -764,7 +764,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 app = FastAPI(
-    title="Deep Research API",
+    title="Vanta",
     version="0.1.0",
     lifespan=lifespan,
     docs_url="/docs",

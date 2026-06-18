@@ -2,6 +2,7 @@ import uuid
 import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 from sqlalchemy import select
@@ -50,9 +51,6 @@ class ChatRequest(BaseModel):
 
 @router.post("/research", response_model=ResearchResponse, status_code=202)
 async def submit_research(body: ResearchRequest, request: Request):
-    org_id = request.state.org_id
-    api_key_id = request.state.api_key_id
-
     job_id = f"job_{uuid.uuid4().hex[:12]}"
 
     transient_backend = getattr(request.state, "transient_backend", None)
@@ -78,8 +76,6 @@ async def submit_research(body: ResearchRequest, request: Request):
     async with get_db_session() as db:
         job = ResearchJob(
             id=job_id,
-            org_id=org_id,
-            api_key_id=api_key_id,
             query=body.query,
             status="queued",
             max_rounds=min(body.max_rounds, 5),
@@ -107,12 +103,10 @@ async def submit_research(body: ResearchRequest, request: Request):
 
 @router.get("/research/{job_id}")
 async def get_research_job(job_id: str, request: Request):
-    org_id = request.state.org_id
-
     async with get_db_session() as db:
         job = await db.get(ResearchJob, job_id)
 
-    if not job or job.org_id != org_id:
+    if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
     response_data = {
@@ -162,14 +156,52 @@ async def get_research_job(job_id: str, request: Request):
     return response_data
 
 
+@router.get("/research/{job_id}/stream")
+async def stream_research_progress(job_id: str, request: Request):
+    import asyncio
+    async def event_generator():
+        last_pct = -1
+        last_source_count = -1
+        while True:
+            # If client disconnects, stop streaming
+            if await request.is_disconnected():
+                break
+
+            async with get_db_session() as db:
+                job = await db.get(ResearchJob, job_id)
+                if not job:
+                    yield "event: error\ndata: {\"message\": \"Job not found\"}\n\n"
+                    break
+
+                # Count sources
+                sources_result = await db.execute(select(Source.id).where(Source.job_id == job_id))
+                source_count = len(sources_result.scalars().all())
+
+                if job.progress_pct != last_pct or source_count != last_source_count:
+                    payload = json.dumps({
+                        "status": job.status,
+                        "progress_pct": job.progress_pct,
+                        "source_count": source_count,
+                        "error": job.error
+                    })
+                    yield f"event: progress\ndata: {payload}\n\n"
+                    last_pct = job.progress_pct
+                    last_source_count = source_count
+
+                if job.status in ("completed", "failed", "cancelled"):
+                    break
+            
+            await asyncio.sleep(2)
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 @router.delete("/research/{job_id}", status_code=204)
 async def cancel_research_job(job_id: str, request: Request):
-    org_id = request.state.org_id
-
     async with get_db_session() as db:
         job = await db.get(ResearchJob, job_id)
 
-        if not job or job.org_id != org_id:
+        if not job:
             raise HTTPException(status_code=404, detail="Job not found")
 
         if job.status in ("completed", "failed", "cancelled"):
@@ -183,11 +215,9 @@ async def cancel_research_job(job_id: str, request: Request):
 
 @router.post("/research/{job_id}/chat")
 async def chat_with_report(job_id: str, body: ChatRequest, request: Request):
-    org_id = request.state.org_id
-
     async with get_db_session() as db:
         job = await db.get(ResearchJob, job_id)
-        if not job or job.org_id != org_id:
+        if not job:
             raise HTTPException(status_code=404, detail="Job not found")
             
         result = await db.execute(select(Report).where(Report.job_id == job_id))
@@ -208,7 +238,7 @@ async def chat_with_report(job_id: str, body: ChatRequest, request: Request):
         final_backend["model"] = body.model
 
     if not final_backend:
-        raise HTTPException(status_code=401, detail="No LLM backend configuration found")
+        raise HTTPException(status_code=401, detail="No LLM backend configuration found. Pass your API key as Bearer token.")
 
     config = LLMConfig(
         provider=final_backend.get("provider", "openai"),
@@ -220,8 +250,8 @@ async def chat_with_report(job_id: str, body: ChatRequest, request: Request):
     llm = LLMClient(config)
 
     system_prompt = (
-        "[Research context — 2026-06-08]\n"
-        "The user previously ran a deep research investigation. "
+        "[Research context]\n"
+        "The user previously ran a Vanta investigation. "
         "Use the report below as your primary knowledge base when answering follow-up questions. "
         "If the user asks something not covered, say so plainly rather than guessing.\n\n"
         "=== ORIGINAL QUERY ===\n" + job.query + "\n\n"
@@ -236,3 +266,29 @@ async def chat_with_report(job_id: str, body: ChatRequest, request: Request):
     llm_response = await llm.complete(messages)
 
     return {"response": llm_response.content}
+
+@router.get("/knowledge-graph/search")
+async def search_knowledge_graph(q: str, limit: int = 10, request: Request = None):
+    if not q:
+        raise HTTPException(status_code=400, detail="Query parameter 'q' is required")
+        
+    transient_backend = getattr(request.state, "transient_backend", None) if request else None
+    
+    config = LLMConfig(
+        provider=transient_backend.get("provider", "openai") if transient_backend else "openai",
+        api_key=transient_backend.get("api_key") if transient_backend else None,
+        base_url=transient_backend.get("base_url") if transient_backend else None,
+        model=transient_backend.get("model", "gpt-4o") if transient_backend else "gpt-4o"
+    )
+    
+    if not config.api_key:
+        raise HTTPException(status_code=401, detail="No LLM backend configuration found. Pass your API key as Bearer token.")
+
+    llm = LLMClient(config)
+    
+    from core.research.memory import MemoryStore
+    memory = MemoryStore(job_id=None, llm=llm)
+    
+    claims = await memory.search_global_memory(q, limit=limit)
+    return {"claims": claims}
+

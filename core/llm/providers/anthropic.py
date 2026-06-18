@@ -1,4 +1,5 @@
 import httpx
+import asyncio
 from core.llm.types import Message, LLMResponse, LLMConfig
 
 
@@ -10,7 +11,7 @@ async def call_anthropic(messages: list[Message], config: LLMConfig) -> LLMRespo
 
     payload = {
         "model": config.model,
-        "max_tokens": config.max_tokens,
+        "max_tokens": config.max_tokens if config.max_tokens is not None else 4096,
         "system": system_content,
         "messages": [{"role": m.role, "content": m.content} for m in user_messages],
     }
@@ -21,14 +22,24 @@ async def call_anthropic(messages: list[Message], config: LLMConfig) -> LLMRespo
         "content-type": "application/json",
     }
 
+    max_retries = 3
+    base_delay = 2.0
+
     async with httpx.AsyncClient(timeout=120.0) as client:
-        response = await client.post(
-            f"{config.base_url.rstrip('/')}/messages",
-            headers=headers,
-            json=payload,
-        )
-        response.raise_for_status()
-        data = response.json()
+        for attempt in range(max_retries + 1):
+            response = await client.post(
+                f"{config.base_url.rstrip('/')}/messages",
+                headers=headers,
+                json=payload,
+            )
+            
+            if response.status_code in (429, 500, 502, 503, 504) and attempt < max_retries:
+                await asyncio.sleep(base_delay * (2 ** attempt))
+                continue
+                
+            response.raise_for_status()
+            data = response.json()
+            break
 
     return LLMResponse(
         content=data["content"][0].get("text") or "",
