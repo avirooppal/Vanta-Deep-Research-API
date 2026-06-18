@@ -24,13 +24,13 @@ class Tool:
                 continue
             
             param_type = "string" # Default
-            if param.annotation == int:
+            if param.annotation is int:
                 param_type = "integer"
-            elif param.annotation == bool:
+            elif param.annotation is bool:
                 param_type = "boolean"
-            elif param.annotation == float:
+            elif param.annotation is float:
                 param_type = "number"
-            elif hasattr(param.annotation, "__origin__") and param.annotation.__origin__ == list:
+            elif hasattr(param.annotation, "__origin__") and param.annotation.__origin__ is list:
                 param_type = "array"
                 
             parameters["properties"][param_name] = {"type": param_type}

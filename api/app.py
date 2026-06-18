@@ -1,6 +1,14 @@
+import os
+import uuid
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from core.logging import request_id_var
 from db.engine import engine
 from api.middleware.auth import auth_middleware
 from api.middleware.audit_log import audit_log_middleware
@@ -9,21 +17,10 @@ from api.routes.research import router as research_router
 from api.routes.reports import router as reports_router
 from api.routes.sources import router as sources_router
 from api.routes.webhooks import router as webhooks_router
-from fastapi.responses import HTMLResponse
-import os
-
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
     await engine.dispose()
-
-
-from fastapi.middleware.cors import CORSMiddleware
-from core.logging import request_id_var
-import uuid
-
 async def request_id_middleware(request: Request, call_next):
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
     token = request_id_var.set(req_id)
@@ -63,7 +60,6 @@ app.include_router(reports_router)
 app.include_router(sources_router)
 app.include_router(webhooks_router)
 
-from prometheus_fastapi_instrumentator import Instrumentator
 Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 

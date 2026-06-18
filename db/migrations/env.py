@@ -5,6 +5,7 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+from core.config import settings
 
 # Import Base and all models for autogenerate
 from db.engine import Base
@@ -21,7 +22,6 @@ from db.models.claim import Claim  # noqa: F401
 config = context.config
 
 # Set DB URL from our settings (overrides alembic.ini)
-from core.config import settings
 config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Logging setup
