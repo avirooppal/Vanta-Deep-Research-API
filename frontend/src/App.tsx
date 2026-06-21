@@ -54,15 +54,17 @@ function App() {
       />
 
       <nav className="relative z-10 mx-auto flex max-w-7xl flex-row items-center justify-between px-8 py-6">
-        <a
-          href="#product"
-          className="text-3xl tracking-tight text-foreground"
-          style={{ fontFamily: "'Instrument Serif', serif" }}
-        >
-          Vanta
-        </a>
+        <div className="flex flex-1 items-center justify-start">
+          <a
+            href="#product"
+            className="text-3xl tracking-tight text-foreground"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+          >
+            Vanta
+          </a>
+        </div>
 
-        <div className="hidden items-center gap-9 md:flex">
+        <div className="hidden flex-1 items-center justify-center gap-9 md:flex">
           {navLinks.map((link) => (
             <a
               key={link.label}
@@ -74,9 +76,24 @@ function App() {
           ))}
         </div>
 
-        <Button size="nav" onClick={() => (window.location.href = "#quick-start")}>
-          Run Vanta
-        </Button>
+        <div className="flex flex-1 items-center justify-end gap-4">
+          <a
+            href="https://www.foundrlist.com/product/vanta?utm_source=badge&utm_medium=embed"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:block"
+          >
+            <img
+              src="https://www.foundrlist.com/api/badge/vanta"
+              alt="Featured on FoundrList"
+              width="150"
+              height="48"
+            />
+          </a>
+          <Button size="nav" onClick={() => (window.location.href = "#quick-start")}>
+            Run Vanta
+          </Button>
+        </div>
       </nav>
 
       <section
