@@ -70,7 +70,7 @@ function App() {
   const isConsolePage = currentPath === "/console";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#04101d] text-foreground">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#04101d] text-foreground">
       {/* Ambient Video Background matching localhost:8000 */}
       <video
         className="fixed inset-0 z-0 h-full w-full object-cover opacity-65 pointer-events-none"

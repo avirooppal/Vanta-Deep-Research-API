@@ -412,6 +412,7 @@ export function ResearchConsole() {
                 value={rounds}
                 onChange={(val) => setRounds(val)}
                 className="w-48 sm:w-52"
+                dropDirection="up"
               />
             </div>
 
