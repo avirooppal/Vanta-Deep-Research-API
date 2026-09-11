@@ -70,10 +70,10 @@ function App() {
   const isConsolePage = currentPath === "/console";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Ambient Video Background */}
+    <main className="relative min-h-screen overflow-hidden bg-[#04101d] text-foreground">
+      {/* Ambient Video Background matching localhost:8000 */}
       <video
-        className="fixed inset-0 z-0 h-full w-full object-cover"
+        className="fixed inset-0 z-0 h-full w-full object-cover opacity-65 pointer-events-none"
         src={videoSource}
         autoPlay
         loop
@@ -82,11 +82,21 @@ function App() {
         aria-hidden="true"
       />
 
-      {/* Conditional Navbar: Dedicated Console Navbar vs Home Navbar */}
+      {/* Dark Radial Gradient Overlay from localhost:8000 */}
+      <div
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 20%, rgba(4, 18, 30, 0.5) 0%, rgba(2, 6, 12, 0.88) 100%)",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Navigation Header */}
       {isConsolePage ? (
-        <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
-          {/* Brand Logo with CONSOLE pill badge */}
-          <div className="flex items-center gap-3">
+        /* Console View Navbar: exact 1:1 match with localhost:8000 */
+        <nav className="relative z-20 mx-auto flex h-20 max-w-[1100px] items-center justify-between px-6 border-b border-white/[0.08]">
+          <div className="flex items-baseline gap-3">
             <a
               href="/"
               onClick={(e) => {
@@ -98,14 +108,13 @@ function App() {
             >
               Vanta
             </a>
-            <span className="rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-widest uppercase text-white/70">
+            <span className="rounded-full border border-white/20 bg-white/[0.03] px-2.5 py-0.5 text-[10px] font-medium tracking-[0.25em] uppercase text-muted-foreground">
               CONSOLE
             </span>
           </div>
 
-          {/* Console Header Links: Fleet Active, API Docs, GitHub, Back Overview */}
-          <div className="flex items-center gap-6 sm:gap-7">
-            <span className="flex items-center text-xs font-medium text-muted-foreground">
+          <div className="flex items-center gap-5 sm:gap-6">
+            <span className="flex items-center text-xs text-muted-foreground">
               <span className="mr-2 inline-block size-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
               Fleet Active
             </span>
@@ -113,7 +122,7 @@ function App() {
               href="http://localhost:8000/docs"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               API Docs
             </a>
@@ -121,24 +130,25 @@ function App() {
               href="https://github.com/avirooppal/Vanta-Deep-Research-API"
               target="_blank"
               rel="noreferrer"
-              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="text-xs text-muted-foreground transition-colors hover:text-foreground"
             >
               GitHub
             </a>
-            <Button
-              size="nav"
-              className="cursor-pointer gap-2 px-4 py-1.5 text-xs"
+            <button
+              type="button"
               onClick={() => navigate("/")}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
             >
-              <ArrowLeft className="size-3.5" />
+              <ArrowLeft className="size-3" />
               Overview
-            </Button>
+            </button>
           </div>
         </nav>
       ) : (
-        <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
-          {/* Brand Logo */}
-          <div className="flex items-center">
+        /* Home Page Navbar: Dead-center alignment using 3-column relative/absolute layout */
+        <nav className="relative z-20 mx-auto flex h-24 max-w-7xl items-center justify-between px-6 sm:px-8">
+          {/* Left Brand */}
+          <div className="flex flex-1 items-center justify-start">
             <a
               href="/"
               onClick={(e) => {
@@ -152,8 +162,8 @@ function App() {
             </a>
           </div>
 
-          {/* Center Nav Links with Proper Spacing & No Line Breaks */}
-          <div className="hidden items-center justify-center gap-8 md:flex lg:gap-10">
+          {/* Center Links: Absolutely and mathematically centered on screen */}
+          <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-8 lg:gap-10">
             <button
               type="button"
               onClick={() => navigate("/", "#product")}
@@ -187,19 +197,18 @@ function App() {
             </button>
           </div>
 
-          {/* Right CTA / Badge */}
-          <div className="flex items-center justify-end gap-3 sm:gap-4">
+          {/* Right Actions: FoundrList badge + Launch Console button perfectly aligned */}
+          <div className="flex flex-1 items-center justify-end gap-3 sm:gap-4">
             <a
               href="https://www.foundrlist.com/product/vanta?utm_source=badge&utm_medium=embed"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:block"
+              className="hidden sm:inline-flex items-center transition-opacity hover:opacity-90"
             >
               <img
                 src="https://www.foundrlist.com/api/badge/vanta"
                 alt="Featured on FoundrList"
-                width="145"
-                height="46"
+                className="h-10 w-auto rounded-lg"
               />
             </a>
 
@@ -216,30 +225,30 @@ function App() {
 
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
-        <section className="relative z-10 mx-auto max-w-5xl px-6 pb-28 pt-8">
-          {/* Hero Section exactly matching localhost:8000 */}
-          <div className="mb-10 text-center">
+        <div className="relative z-10 mx-auto max-w-[1100px] px-6 py-6">
+          {/* Exact Hero Header from localhost:8000 */}
+          <header className="py-6 text-center flex flex-col items-center gap-3.5">
             <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
               Multi-Agent Autonomous Intelligence
             </span>
             <h1
-              className="mt-4 text-4xl font-normal leading-[1.08] tracking-[-1.5px] sm:text-6xl md:text-7xl"
+              className="max-w-[850px] text-4xl font-normal leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
               Autonomous research{" "}
               <em className="font-normal italic text-muted-foreground">without</em>{" "}
               hallucinated shortcuts.
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            <p className="max-w-[600px] text-sm leading-relaxed text-muted-foreground sm:text-base">
               Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
             </p>
-          </div>
+          </header>
 
           <ResearchConsole />
-        </section>
+        </div>
       ) : (
         <>
-          {/* Hero Section */}
+          {/* Hero Section on Home Page */}
           <section
             id="product"
             className="relative z-10 mx-auto flex min-h-[calc(100vh-96px)] max-w-7xl flex-col items-center justify-center px-6 pb-24 pt-20 text-center"
