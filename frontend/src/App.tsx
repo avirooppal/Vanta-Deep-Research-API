@@ -82,94 +82,127 @@ function App() {
         aria-hidden="true"
       />
 
-      {/* Global Navbar */}
-      <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
-        {/* Brand Logo */}
-        <div className="flex items-center gap-3">
-          <a
-            href="/"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate("/");
-            }}
-            className="text-3xl tracking-tight text-foreground transition-opacity hover:opacity-90"
-            style={{ fontFamily: "'Instrument Serif', serif" }}
-          >
-            Vanta
-          </a>
-          {isConsolePage && (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-300">
-              <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
-              Engine Ready
+      {/* Conditional Navbar: Dedicated Console Navbar vs Home Navbar */}
+      {isConsolePage ? (
+        <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
+          {/* Brand Logo with CONSOLE pill badge */}
+          <div className="flex items-center gap-3">
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/");
+              }}
+              className="text-3xl tracking-tight text-foreground transition-opacity hover:opacity-90"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Vanta
+            </a>
+            <span className="rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] font-semibold tracking-widest uppercase text-white/70">
+              CONSOLE
             </span>
-          )}
-        </div>
+          </div>
 
-        {/* Center Nav Links with Proper Spacing & No Line Breaks */}
-        <div className="hidden items-center justify-center gap-7 md:flex lg:gap-9">
-          <button
-            type="button"
-            onClick={() => navigate("/", "#product")}
-            className="cursor-pointer whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Product
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/console")}
-            className={`cursor-pointer whitespace-nowrap text-sm transition-colors ${
-              isConsolePage
-                ? "font-semibold text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Console
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/", "#agents")}
-            className="cursor-pointer whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Agents
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/", "#quick-start")}
-            className="cursor-pointer whitespace-nowrap text-sm text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Quick Start
-          </button>
-        </div>
-
-        {/* Right CTA / Badge */}
-        <div className="flex items-center justify-end gap-3 sm:gap-4">
-          <a
-            href="https://www.foundrlist.com/product/vanta?utm_source=badge&utm_medium=embed"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:block"
-          >
-            <img
-              src="https://www.foundrlist.com/api/badge/vanta"
-              alt="Featured on FoundrList"
-              width="145"
-              height="46"
-            />
-          </a>
-
-          {isConsolePage ? (
+          {/* Console Header Links: Fleet Active, API Docs, GitHub, Back Overview */}
+          <div className="flex items-center gap-6 sm:gap-7">
+            <span className="flex items-center text-xs font-medium text-muted-foreground">
+              <span className="mr-2 inline-block size-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" />
+              Fleet Active
+            </span>
+            <a
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              API Docs
+            </a>
+            <a
+              href="https://github.com/avirooppal/Vanta-Deep-Research-API"
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              GitHub
+            </a>
             <Button
               size="nav"
-              className="cursor-pointer gap-2"
+              className="cursor-pointer gap-2 px-4 py-1.5 text-xs"
               onClick={() => navigate("/")}
             >
               <ArrowLeft className="size-3.5" />
               Overview
             </Button>
-          ) : (
+          </div>
+        </nav>
+      ) : (
+        <nav className="relative z-10 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8">
+          {/* Brand Logo */}
+          <div className="flex items-center">
+            <a
+              href="/"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/");
+              }}
+              className="text-3xl tracking-tight text-foreground transition-opacity hover:opacity-90"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Vanta
+            </a>
+          </div>
+
+          {/* Center Nav Links with Proper Spacing & No Line Breaks */}
+          <div className="hidden items-center justify-center gap-8 md:flex lg:gap-10">
+            <button
+              type="button"
+              onClick={() => navigate("/", "#product")}
+              className="cursor-pointer whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Product
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/console")}
+              className="cursor-pointer whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Console
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/", "#agents")}
+              className="cursor-pointer whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Agents
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate("/", "#quick-start")}
+              className="cursor-pointer whitespace-nowrap text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Quick Start
+            </button>
+          </div>
+
+          {/* Right CTA / Badge */}
+          <div className="flex items-center justify-end gap-3 sm:gap-4">
+            <a
+              href="https://www.foundrlist.com/product/vanta?utm_source=badge&utm_medium=embed"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:block"
+            >
+              <img
+                src="https://www.foundrlist.com/api/badge/vanta"
+                alt="Featured on FoundrList"
+                width="145"
+                height="46"
+              />
+            </a>
+
             <Button
               size="nav"
               className="cursor-pointer"
@@ -177,25 +210,28 @@ function App() {
             >
               Launch Console
             </Button>
-          )}
-        </div>
-      </nav>
+          </div>
+        </nav>
+      )}
 
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
-        <section className="relative z-10 mx-auto max-w-6xl px-6 pb-28 pt-8">
+        <section className="relative z-10 mx-auto max-w-5xl px-6 pb-28 pt-8">
+          {/* Hero Section exactly matching localhost:8000 */}
           <div className="mb-10 text-center">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1 text-xs font-medium uppercase tracking-[0.28em] text-muted-foreground backdrop-blur-md">
-              Autonomous Research-as-a-Service
-            </p>
+            <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
+              Multi-Agent Autonomous Intelligence
+            </span>
             <h1
-              className="mt-4 text-4xl font-normal tracking-tight sm:text-6xl"
+              className="mt-4 text-4xl font-normal leading-[1.08] tracking-[-1.5px] sm:text-6xl md:text-7xl"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
-              Vanta Research Console
+              Autonomous research{" "}
+              <em className="font-normal italic text-muted-foreground">without</em>{" "}
+              hallucinated shortcuts.
             </h1>
-            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Multi-agent pipeline running inside your infrastructure. Decompose, validate, extract, and synthesize.
+            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+              Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
             </p>
           </div>
 
