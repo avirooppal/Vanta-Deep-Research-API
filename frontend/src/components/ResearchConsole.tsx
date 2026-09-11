@@ -55,6 +55,25 @@ const API_BASE = (
   "http://localhost:8000"
 ).replace(/\/$/, "");
 
+import { CustomSelect, SelectOption } from "./ui/CustomSelect";
+
+const PROVIDER_OPTIONS: SelectOption<string>[] = [
+  { value: "", label: "Auto-detect from key" },
+  { value: "openai", label: "OpenAI (GPT-4o, o3-mini)" },
+  { value: "anthropic", label: "Anthropic (Claude 3.5 Sonnet)" },
+  { value: "openai_compatible", label: "Gemini / Custom OpenAI Base" },
+  { value: "openrouter", label: "OpenRouter" },
+  { value: "ollama", label: "Ollama / Local vLLM" },
+];
+
+const ROUNDS_OPTIONS: SelectOption<number>[] = [
+  { value: 1, label: "1 Round (Fast)" },
+  { value: 2, label: "2 Rounds" },
+  { value: 3, label: "3 Rounds (Balanced)" },
+  { value: 4, label: "4 Rounds" },
+  { value: 5, label: "5 Rounds (Max)" },
+];
+
 export function ResearchConsole() {
   const [mode, setMode] = useState("research");
   const [rounds, setRounds] = useState(3);
@@ -279,23 +298,15 @@ export function ResearchConsole() {
         {showSettings && (
           <div className="settings-content">
             <div className="form-group">
-              <label htmlFor="advProvider">Provider</label>
-              <select
-                id="advProvider"
+              <label>Provider</label>
+              <CustomSelect
+                options={PROVIDER_OPTIONS}
                 value={provider}
-                onChange={(e) => {
-                  setProvider(e.target.value);
-                  saveSettings();
+                onChange={(val) => {
+                  setProvider(val);
+                  localStorage.setItem("vanta_provider", val);
                 }}
-                className="form-select"
-              >
-                <option value="">Auto-detect from key</option>
-                <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
-                <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
-                <option value="openai_compatible">Gemini / Custom OpenAI Base</option>
-                <option value="openrouter">OpenRouter</option>
-                <option value="ollama">Ollama / Local vLLM</option>
-              </select>
+              />
             </div>
 
             <div className="form-group">
@@ -394,19 +405,14 @@ export function ResearchConsole() {
           </div>
 
           <div className="action-row">
-            <div className="rounds-picker">
-              <label htmlFor="maxRounds">Rounds:</label>
-              <select
-                id="maxRounds"
+            <div className="rounds-picker flex items-center gap-3">
+              <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">Rounds:</label>
+              <CustomSelect
+                options={ROUNDS_OPTIONS}
                 value={rounds}
-                onChange={(e) => setRounds(Number(e.target.value))}
-              >
-                <option value={1}>1 Round (Fast)</option>
-                <option value={2}>2 Rounds</option>
-                <option value={3}>3 Rounds (Balanced)</option>
-                <option value={4}>4 Rounds</option>
-                <option value={5}>5 Rounds (Max)</option>
-              </select>
+                onChange={(val) => setRounds(val)}
+                className="w-48 sm:w-52"
+              />
             </div>
 
             <button
