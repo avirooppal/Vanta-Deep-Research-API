@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Copy, Download, Loader2, ArrowRight, X } from "lucide-react";
+import { Check, Copy, Download } from "lucide-react";
 
 interface ModeOption {
   id: string;
@@ -262,31 +262,32 @@ export function ResearchConsole() {
   return (
     <div className="w-full space-y-6">
       {/* 1. Collapsible Settings Bar (Exact Match with localhost:8000) */}
-      <div className="liquid-glass rounded-xl p-4 sm:p-5 transition-all">
+      <div className="console-card" style={{ padding: "1.25rem" }}>
         <div
-          className="flex cursor-pointer select-none items-center justify-between"
+          className="settings-bar"
           onClick={() => setShowSettings(!showSettings)}
         >
-          <div className="flex items-center gap-2.5 text-sm font-medium text-foreground">
+          <div className="settings-label">
             <span>⚙️</span>
             <span>LLM Provider &amp; API Key Configuration</span>
           </div>
-          <span className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
             {showSettings ? "[-] Collapse" : "[+] Configure Keys"}
           </span>
         </div>
 
         {showSettings && (
-          <div className="mt-4 grid gap-4 border-t border-white/10 pt-4 sm:grid-cols-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">Provider</label>
+          <div className="settings-content">
+            <div className="form-group">
+              <label htmlFor="advProvider">Provider</label>
               <select
+                id="advProvider"
                 value={provider}
                 onChange={(e) => {
                   setProvider(e.target.value);
                   saveSettings();
                 }}
-                className="w-full rounded-lg border border-white/15 bg-black/60 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-white/40"
+                className="form-select"
               >
                 <option value="">Auto-detect from key</option>
                 <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
@@ -297,117 +298,108 @@ export function ResearchConsole() {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-medium text-muted-foreground">
-                API Key (Stored locally in browser)
-              </label>
+            <div className="form-group">
+              <label htmlFor="apiKey">API Key (Stored locally in browser)</label>
               <input
                 type="password"
+                id="apiKey"
                 value={apiKey}
                 onChange={(e) => {
                   setApiKey(e.target.value);
                   saveSettings();
                 }}
                 placeholder="sk-ant-... or sk-... or AIza..."
-                className="w-full rounded-lg border border-white/15 bg-black/60 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-white/40"
+                className="form-input"
               />
             </div>
 
-            <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground">
-                Optional Base URL Override
-              </label>
+            <div className="form-group sm:col-span-2">
+              <label htmlFor="advBaseUrl">Optional Base URL Override</label>
               <input
                 type="text"
+                id="advBaseUrl"
                 value={baseUrl}
                 onChange={(e) => {
                   setBaseUrl(e.target.value);
                   saveSettings();
                 }}
                 placeholder="https://api.openai.com/v1 or http://localhost:11434/v1"
-                className="w-full rounded-lg border border-white/15 bg-black/60 px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-white/40"
+                className="form-input"
               />
             </div>
           </div>
         )}
       </div>
 
-      {/* 2. Main Query Launchpad Card */}
+      {/* 2. Main Query Launchpad Card (Exact Match with localhost:8000) */}
       {!loading && !report && (
-        <div className="liquid-glass rounded-xl p-6 sm:p-8">
-          <div className="mb-3.5 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Select Research Mode
-          </div>
+        <div className="console-card" id="queryCard">
+          <div className="modes-section-title">Select Research Mode</div>
 
-          {/* Mode Tiles */}
-          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mode-grid">
             {MODES.map((m) => {
               const active = mode === m.id;
               return (
                 <div
                   key={m.id}
                   onClick={() => handleModeSelect(m)}
-                  className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4.5 text-left transition-all ${
-                    active
-                      ? "border-white/60 bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.06),0_8px_24px_rgba(0,0,0,0.4)]"
-                      : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]"
-                  }`}
+                  className={`mode-card ${active ? "active" : ""}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-foreground">{m.name}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                        active ? "bg-white text-black" : "bg-white/10 text-muted-foreground"
-                      }`}
-                    >
-                      {m.badge}
-                    </span>
+                  <div className="mode-card-header">
+                    <span className="mode-icon-title">{m.name}</span>
+                    <span className="mode-badge">{m.badge}</span>
                   </div>
-                  <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">{m.desc}</p>
+                  <p className="mode-desc">{m.desc}</p>
                 </div>
               );
             })}
           </div>
 
-          {/* Query Input */}
-          <div className="mt-8 flex flex-col gap-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Research Question or Topic
-            </label>
+          <div className="form-group query-area">
+            <label htmlFor="queryText">Research Question or Topic</label>
             <textarea
+              id="queryText"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              rows={4}
               placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?"
-              className="w-full rounded-xl border border-white/15 bg-black/50 p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/60 outline-none transition-colors focus:border-white/40"
+              className="form-textarea"
             />
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-xs text-muted-foreground/80">Try:</span>
+            <div className="suggestions">
+              <span style={{ fontSize: "0.75rem", color: "#64748b", marginRight: "0.25rem" }}>
+                Try:
+              </span>
               {[
-                { label: "Solid-state batteries", text: "What are the latest breakthroughs in room-temperature solid-state batteries?" },
-                { label: "Quantum computing", text: "Explain quantum computing and qubit superposition from first principles" },
-                { label: "Mamba vs Transformers", text: "State space models (Mamba) vs Transformers: architectural trade-offs" },
+                {
+                  label: "Solid-state batteries",
+                  text: "What are the latest breakthroughs in room-temperature solid-state batteries?",
+                },
+                {
+                  label: "Quantum computing",
+                  text: "Explain quantum computing and qubit superposition from first principles",
+                },
+                {
+                  label: "Mamba vs Transformers",
+                  text: "State space models (Mamba) vs Transformers: architectural trade-offs",
+                },
               ].map((s) => (
-                <button
+                <span
                   key={s.label}
-                  type="button"
+                  className="suggestion-pill"
                   onClick={() => setQuery(s.text)}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-xs text-muted-foreground transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-foreground"
                 >
                   {s.label}
-                </button>
+                </span>
               ))}
             </div>
           </div>
 
-          {/* Action Row */}
-          <div className="mt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-medium text-muted-foreground">Rounds:</label>
+          <div className="action-row">
+            <div className="rounds-picker">
+              <label htmlFor="maxRounds">Rounds:</label>
               <select
+                id="maxRounds"
                 value={rounds}
                 onChange={(e) => setRounds(Number(e.target.value))}
-                className="rounded-lg border border-white/15 bg-black/60 px-3.5 py-2 text-sm text-foreground outline-none transition-colors focus:border-white/40"
               >
                 <option value={1}>1 Round (Fast)</option>
                 <option value={2}>2 Rounds</option>
@@ -419,11 +411,11 @@ export function ResearchConsole() {
 
             <button
               type="button"
+              className="btn-primary-action"
               onClick={launchPipeline}
-              className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3 text-sm font-semibold text-black shadow-[0_4px_20px_rgba(255,255,255,0.25)] transition-all hover:bg-slate-100 hover:shadow-[0_8px_30px_rgba(255,255,255,0.35)]"
             >
               <span>Launch Research Fleet</span>
-              <ArrowRight className="size-4" />
+              <span>→</span>
             </button>
           </div>
         </div>
@@ -431,7 +423,7 @@ export function ResearchConsole() {
 
       {/* 3. Live Pipeline Execution Tracker Card */}
       {loading && (
-        <div className="liquid-glass rounded-xl p-6 sm:p-8">
+        <div className="console-card">
           <div className="flex items-center justify-between border-b border-white/10 pb-5">
             <div>
               <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
@@ -500,7 +492,7 @@ export function ResearchConsole() {
 
       {/* 4. Final Report Card */}
       {report && (
-        <div className="liquid-glass rounded-xl p-6 sm:p-10">
+        <div className="console-card">
           <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
             <div>
               <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
