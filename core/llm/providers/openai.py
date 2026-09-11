@@ -21,8 +21,9 @@ async def call_openai(messages: list[Message], config: LLMConfig) -> LLMResponse
         payload["max_tokens"] = config.max_tokens
 
     import asyncio
-    max_retries = 3
-    base_delay = 2.0
+    import random
+    max_retries = 5
+    base_delay = 2.5
 
     async with httpx.AsyncClient(timeout=120.0) as client:
         for attempt in range(max_retries + 1):
@@ -33,10 +34,45 @@ async def call_openai(messages: list[Message], config: LLMConfig) -> LLMResponse
             )
             
             if response.status_code == 429 and attempt < max_retries:
-                await asyncio.sleep(base_delay * (2 ** attempt))
+                retry_after = response.headers.get("retry-after")
+                if retry_after:
+                    try:
+                        delay = float(retry_after) + random.uniform(0.5, 1.5)
+                    except ValueError:
+                        delay = base_delay * (2 ** attempt) + random.uniform(0.5, 1.5)
+                else:
+                    delay = base_delay * (2 ** attempt) + random.uniform(0.5, 1.5)
+                await asyncio.sleep(delay)
                 continue
                 
-            response.raise_for_status()
+            try:
+                response.raise_for_status()
+            except httpx.HTTPStatusError as exc:
+                err_detail = None
+                try:
+                    err_json = response.json()
+                    err_detail = (
+                        err_json.get("error", {}).get("message")
+                        or err_json.get("message")
+                        or str(err_json)
+                    )
+                except Exception:
+                    pass
+
+                if response.status_code == 429:
+                    msg = f"Rate limit (429) from {config.provider}: {err_detail or response.text}"
+                    if config.provider == "openrouter":
+                        msg += (
+                            " (Note: OpenRouter free tier is capped at 20 req/min and 50 req/day. "
+                            "Consider specifying a model like google/gemini-2.5-flash or adding OpenRouter credits)."
+                        )
+                    raise RuntimeError(msg) from exc
+
+                if err_detail:
+                    raise RuntimeError(f"LLM API Error ({response.status_code}): {err_detail}") from exc
+
+                raise
+
             data = response.json()
             break
 

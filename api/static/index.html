@@ -669,6 +669,11 @@
                     <label for="advBaseUrl">Optional Base URL Override</label>
                     <input type="text" id="advBaseUrl" placeholder="https://api.openai.com/v1 or http://localhost:11434/v1">
                 </div>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label for="advModelOverride">Model Override (Optional)</label>
+                    <input type="text" id="advModelOverride" placeholder="e.g. google/gemini-2.5-flash, deepseek/deepseek-chat, or meta-llama/llama-3.3-70b-instruct">
+                    <span style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">For OpenRouter: free models have a 20 req/min & 50 req/day limit. Specifying a paid model prevents 429 errors.</span>
+                </div>
             </div>
         </div>
 
@@ -825,9 +830,11 @@
             const savedKey = localStorage.getItem("vanta_api_key");
             const savedProvider = localStorage.getItem("vanta_provider");
             const savedBaseUrl = localStorage.getItem("vanta_base_url");
+            const savedModel = localStorage.getItem("vanta_model_override");
             if (savedKey) document.getElementById("apiKey").value = savedKey;
             if (savedProvider) document.getElementById("advProvider").value = savedProvider;
             if (savedBaseUrl) document.getElementById("advBaseUrl").value = savedBaseUrl;
+            if (savedModel) document.getElementById("advModelOverride").value = savedModel;
         });
 
         function toggleSettings() {
@@ -850,6 +857,7 @@
             localStorage.setItem("vanta_api_key", document.getElementById("apiKey").value.trim());
             localStorage.setItem("vanta_provider", document.getElementById("advProvider").value);
             localStorage.setItem("vanta_base_url", document.getElementById("advBaseUrl").value.trim());
+            localStorage.setItem("vanta_model_override", document.getElementById("advModelOverride").value.trim());
         }
 
         function selectMode(mode, defaultRounds) {
@@ -896,6 +904,7 @@
             const maxRounds = parseInt(document.getElementById("maxRounds").value);
             const provider = document.getElementById("advProvider").value;
             const baseUrl = document.getElementById("advBaseUrl").value.trim();
+            const modelOverride = document.getElementById("advModelOverride").value.trim();
 
             if (!query) {
                 alert("Please enter a research inquiry.");
@@ -934,6 +943,7 @@
             };
             if (provider) payload.provider = provider;
             if (baseUrl) payload.base_url = baseUrl;
+            if (modelOverride) payload.model = modelOverride;
 
             try {
                 const res = await fetch("/v1/research", {

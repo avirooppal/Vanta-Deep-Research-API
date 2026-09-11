@@ -3,6 +3,7 @@ from core.llm.providers.openai import call_openai
 from core.llm.providers.anthropic import call_anthropic
 
 
+import asyncio
 import hashlib
 
 class LLMClient:
@@ -16,6 +17,10 @@ class LLMClient:
         self.total_tokens_out = 0
         self.search_queries_issued = 0
         self.sources_fetched = 0
+        concurrency_limit = config.max_concurrent or 3
+        if config.provider == "openrouter" and "free" in (config.model or ""):
+            concurrency_limit = min(concurrency_limit, 2)
+        self._semaphore = asyncio.Semaphore(concurrency_limit)
 
     async def complete(self, messages: list[Message], complexity: str = "high") -> LLMResponse:
         cfg = self.low_complexity_config if complexity == "low" and self.low_complexity_config else self.config
@@ -29,12 +34,13 @@ class LLMClient:
                 self.cache_hits += 1
                 return self.cache[cache_key]
 
-        if provider in ("openai", "openai_compatible", "azure_openai", "openrouter", "ollama"):
-            res = await call_openai(messages, cfg)
-        elif provider == "anthropic":
-            res = await call_anthropic(messages, cfg)
-        else:
-            raise ValueError(f"Unsupported provider: {provider}")
+        async with self._semaphore:
+            if provider in ("openai", "openai_compatible", "azure_openai", "openrouter", "ollama"):
+                res = await call_openai(messages, cfg)
+            elif provider == "anthropic":
+                res = await call_anthropic(messages, cfg)
+            else:
+                raise ValueError(f"Unsupported provider: {provider}")
 
         if cache_key:
             self.cache[cache_key] = res

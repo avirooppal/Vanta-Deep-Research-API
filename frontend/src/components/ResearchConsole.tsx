@@ -81,6 +81,7 @@ export function ResearchConsole() {
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
+  const [modelOverride, setModelOverride] = useState("");
   const [showSettings, setShowSettings] = useState(false);
 
   // Execution state
@@ -103,9 +104,11 @@ export function ResearchConsole() {
     const savedKey = localStorage.getItem("vanta_api_key") || localStorage.getItem("vanta_key");
     const savedProvider = localStorage.getItem("vanta_provider");
     const savedBaseUrl = localStorage.getItem("vanta_base_url");
+    const savedModel = localStorage.getItem("vanta_model_override");
     if (savedKey) setApiKey(savedKey);
     if (savedProvider) setProvider(savedProvider);
     if (savedBaseUrl) setBaseUrl(savedBaseUrl);
+    if (savedModel) setModelOverride(savedModel);
   }, []);
 
   const addLog = (msg: string) => {
@@ -130,6 +133,7 @@ export function ResearchConsole() {
     localStorage.setItem("vanta_key", apiKey.trim());
     localStorage.setItem("vanta_provider", provider);
     localStorage.setItem("vanta_base_url", baseUrl.trim());
+    localStorage.setItem("vanta_model_override", modelOverride.trim());
   };
 
   const launchPipeline = async () => {
@@ -164,6 +168,7 @@ export function ResearchConsole() {
           max_rounds: rounds,
           provider: provider || undefined,
           base_url: baseUrl.trim() || undefined,
+          model: modelOverride.trim() || undefined,
         }),
       });
 
@@ -337,6 +342,35 @@ export function ResearchConsole() {
                 placeholder="https://api.openai.com/v1 or http://localhost:11434/v1"
                 className="form-input"
               />
+            </div>
+
+            <div className="form-group sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="advModelOverride">Model Override (Optional)</label>
+                {provider === "openrouter" && (
+                  <span className="text-[11px] text-amber-400/90 font-medium">Free tier limit: 20 req/min & 50 req/day</span>
+                )}
+              </div>
+              <input
+                type="text"
+                id="advModelOverride"
+                value={modelOverride}
+                onChange={(e) => {
+                  setModelOverride(e.target.value);
+                  saveSettings();
+                }}
+                placeholder={
+                  provider === "openrouter"
+                    ? "e.g. google/gemini-2.5-flash, deepseek/deepseek-chat, or meta-llama/llama-3.3-70b-instruct"
+                    : "e.g. gpt-4o, claude-3-5-sonnet-latest, or gemini-2.5-flash"
+                }
+                className="form-input"
+              />
+              {provider === "openrouter" && (
+                <p className="text-[11px] text-muted-foreground/80 leading-relaxed mt-1">
+                  💡 Note: OpenRouter default free models (<code className="text-white/80">openrouter/free</code>) strictly cap concurrent calls. If you have OpenRouter credits, specify a model like <code className="text-emerald-400">google/gemini-2.5-flash</code> or <code className="text-emerald-400">deepseek/deepseek-chat</code> to avoid 429 rate limit errors during deep agent exploration.
+                </p>
+              )}
             </div>
           </div>
         )}
