@@ -225,7 +225,21 @@ function App() {
 
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
-        <div className="relative z-10 mx-auto max-w-[1180px] px-4 py-8">
+        <div className="relative z-10 mx-auto max-w-[1100px] px-4 py-6">
+          <header className="hero text-center mb-8 flex flex-col items-center gap-2.5">
+            <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+              Multi-Agent Autonomous Intelligence
+            </span>
+            <h1
+              className="text-4xl sm:text-5xl font-normal tracking-tight text-foreground"
+              style={{ fontFamily: "'Instrument Serif', serif" }}
+            >
+              Autonomous research <em className="not-italic text-muted-foreground">without</em> hallucinated shortcuts.
+            </h1>
+            <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
+            </p>
+          </header>
           <ResearchConsole />
         </div>
       ) : (

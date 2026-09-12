@@ -195,178 +195,37 @@
             border-color: rgba(255, 255, 255, 0.18);
         }
 
-        /* Console Floating Window Frame */
-        .console-window {
-            display: flex;
-            min-height: 680px;
-            background: rgba(8, 14, 26, 0.75);
-            backdrop-filter: blur(28px);
-            -webkit-backdrop-filter: blur(28px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 28px;
-            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 25px 60px rgba(0, 0, 0, 0.6);
-            overflow: hidden;
-            position: relative;
-        }
-
-        /* Sidebar Rail */
-        .sidebar-rail {
-            width: 68px;
-            background: rgba(4, 9, 18, 0.6);
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.5rem 0.5rem;
-            flex-shrink: 0;
-            z-index: 10;
-        }
-
-        .rail-top, .rail-bottom {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            width: 100%;
-        }
-
-        .rail-logo {
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            margin-bottom: 0.5rem;
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-        }
-
-        .rail-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
-            background: transparent;
-            border: 1px solid transparent;
-            color: #94a3b8;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .rail-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.15);
-            color: #ffffff;
-            transform: scale(1.05);
-        }
-
-        .rail-btn.active {
-            background: rgba(255, 255, 255, 0.12);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #ffffff;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-        }
-
-        /* Console Main Area */
-        .console-main {
-            flex: 1;
-            padding: 3.5rem 4rem 3rem 4rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            max-width: 1050px;
-            margin: 0 auto;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        /* Greeting Headline */
-        .greeting-section {
-            margin-bottom: 2.25rem;
-            transition: opacity 0.3s ease;
-        }
-
-        .greeting-title {
-            font-size: 3.25rem;
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: -0.03em;
-            color: #ffffff;
-        }
-
-        .gradient-name {
-            background: linear-gradient(135deg, #c084fc 0%, #ec4899 50%, #818cf8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .greeting-sub {
-            font-size: 3.25rem;
-            font-weight: 700;
-            line-height: 1.1;
-            letter-spacing: -0.03em;
-            color: #818cf8;
-            margin-bottom: 0.75rem;
-        }
-
-        .greeting-desc {
-            font-size: 0.95rem;
-            color: #94a3b8;
-            margin-bottom: 2rem;
-        }
-
-        /* Prompt Suggestion Cards (4 in a row) */
+        /* Quick Prompt Cards */
         .prompt-cards-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
+            gap: 0.85rem;
             margin-bottom: 0.85rem;
         }
 
         .prompt-card {
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(255, 255, 255, 0.025);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 14px;
-            padding: 1.25rem 1.15rem 1rem 1.15rem;
+            border-radius: 12px;
+            padding: 1rem 0.95rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            min-height: 125px;
+            min-height: 110px;
             cursor: pointer;
             transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
             text-align: left;
         }
 
         .prompt-card:hover {
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.06);
             border-color: rgba(255, 255, 255, 0.22);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
         }
 
         .prompt-card-text {
-            font-size: 0.825rem;
+            font-size: 0.8rem;
             line-height: 1.45;
             color: #cbd5e1;
             font-weight: 400;
@@ -375,12 +234,11 @@
         .prompt-card-icon {
             font-size: 1rem;
             color: #64748b;
-            margin-top: 1rem;
+            margin-top: 0.85rem;
             display: flex;
             align-items: center;
         }
 
-        /* Refresh Prompts Button */
         .refresh-prompts-btn {
             display: inline-flex;
             align-items: center;
@@ -388,11 +246,10 @@
             background: transparent;
             border: none;
             color: #94a3b8;
-            font-size: 0.825rem;
+            font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
-            padding: 0.35rem 0;
-            margin-bottom: 2rem;
+            padding: 0.25rem 0;
             transition: color 0.15s;
         }
 
@@ -408,234 +265,10 @@
             transform: rotate(180deg);
         }
 
-        /* Floating Input Card (from screenshot) */
-        .floating-input-card {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
-            padding: 1.25rem 1.5rem;
-            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-            transition: all 0.2s ease;
-        }
-
-        .floating-input-card:focus-within {
-            border-color: rgba(255, 255, 255, 0.3);
-            background: rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
-        }
-
-        .input-top-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .floating-input-card textarea {
-            flex: 1;
-            min-height: 55px;
-            max-height: 180px;
-            background: transparent;
-            border: none;
-            outline: none;
-            font-family: var(--font-body);
-            font-size: 0.975rem;
-            color: #ffffff;
-            resize: none;
-            line-height: 1.5;
-            padding: 0;
-        }
-
-        .floating-input-card textarea::placeholder {
-            color: #64748b;
-            font-size: 0.95rem;
-        }
-
-        /* Scope Selector Pill */
-        .scope-selector-container {
-            position: relative;
-            flex-shrink: 0;
-        }
-
-        .scope-pill-btn {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 9999px;
-            padding: 0.35rem 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.775rem;
-            color: #cbd5e1;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .scope-pill-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.25);
-            color: #ffffff;
-        }
-
-        .scope-dropdown-menu {
-            position: absolute;
-            top: calc(100% + 6px);
-            right: 0;
-            width: 260px;
-            background: #090e1a;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            padding: 0.4rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-            display: none;
-            flex-direction: column;
-            gap: 0.2rem;
-            z-index: 50;
-        }
-
-        .scope-item {
-            display: flex;
-            align-items: center;
-            gap: 0.65rem;
-            padding: 0.55rem 0.65rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .scope-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .scope-item.active {
-            background: rgba(129, 140, 248, 0.15);
-            border: 1px solid rgba(129, 140, 248, 0.3);
-        }
-
-        .scope-item-name {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #ffffff;
-        }
-
-        .scope-item-desc {
-            font-size: 0.7rem;
-            color: #94a3b8;
-        }
-
-        /* Bottom Toolbar inside Input Card */
-        .input-bottom-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 1rem;
-            padding-top: 0.85rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        .input-actions-left {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .rounds-pill-wrapper {
-            position: relative;
-        }
-
-        .rounds-dropdown-menu {
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 0;
-            width: 200px;
-            background: #090e1a;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            padding: 0.35rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
-            display: none;
-            flex-direction: column;
-            gap: 0.2rem;
-            z-index: 50;
-        }
-
-        .rounds-item {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.8rem;
-            color: #cbd5e1;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background 0.15s;
-        }
-
-        .rounds-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            color: #ffffff;
-        }
-
-        .rounds-item.active {
-            background: rgba(129, 140, 248, 0.15);
-            color: #818cf8;
-            font-weight: 600;
-        }
-
-        .pill-btn {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            border-radius: 9999px;
-            padding: 0.35rem 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.75rem;
-            color: #94a3b8;
-            cursor: pointer;
-            transition: all 0.15s ease;
-        }
-
-        .pill-btn:hover {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #ffffff;
-        }
-
-        .input-actions-right {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-        }
-
         .char-counter {
             font-size: 0.75rem;
-            color: #64748b;
+            color: var(--text-dim);
             font-family: monospace;
-        }
-
-        .send-arrow-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: #6366f1;
-            color: #ffffff;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-        }
-
-        .send-arrow-btn:hover {
-            background: #4f46e5;
-            transform: scale(1.06);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
-        }
-
-        .send-arrow-btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
         /* Settings Modal Backdrop & Dialog */
@@ -1118,29 +751,6 @@
         }
 
         @media (max-width: 900px) {
-            .console-window {
-                flex-direction: column;
-                min-height: auto;
-                border-radius: 20px;
-            }
-            .sidebar-rail {
-                width: 100%;
-                height: auto;
-                flex-direction: row;
-                border-right: none;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-                padding: 0.75rem 1rem;
-            }
-            .rail-top, .rail-bottom {
-                flex-direction: row;
-                width: auto;
-            }
-            .console-main {
-                padding: 2rem 1.25rem;
-            }
-            .greeting-title, .greeting-sub {
-                font-size: 2.25rem;
-            }
             .prompt-cards-grid {
                 grid-template-columns: 1fr 1fr;
             }
@@ -1149,15 +759,6 @@
         @media (max-width: 600px) {
             .prompt-cards-grid {
                 grid-template-columns: 1fr;
-            }
-            .greeting-title, .greeting-sub {
-                font-size: 1.85rem;
-            }
-            .input-top-row {
-                flex-direction: column;
-            }
-            .scope-selector-container {
-                align-self: flex-start;
             }
         }
     </style>
@@ -1181,155 +782,110 @@
                 </span>
                 <a href="/docs" target="_blank" class="nav-link">API Docs</a>
                 <a href="https://github.com/avirooppal/Vanta-Deep-Research-API" target="_blank" class="nav-link">GitHub</a>
+                <button type="button" class="btn-secondary" onclick="openSettingsModal()" style="padding: 0.35rem 0.85rem; font-size: 0.8rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                    <span>⚙️</span>
+                    <span id="navSettingsLabel">Settings</span>
+                </button>
             </div>
         </nav>
 
-        <!-- Main Console Window (Matching reference screenshot) -->
-        <div class="console-window">
-            <!-- Sidebar Rail -->
-            <aside class="sidebar-rail">
-                <div class="rail-top">
-                    <div class="rail-logo" title="Vanta Deep Research">
-                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" fill="url(#sparkGrad)" stroke="none"/>
-                            <defs>
-                                <linearGradient id="sparkGrad" x1="2" y1="2" x2="22" y2="22">
-                                    <stop offset="0%" stop-color="#c084fc"/>
-                                    <stop offset="100%" stop-color="#818cf8"/>
-                                </linearGradient>
-                            </defs>
-                        </svg>
+        <!-- Hero Section -->
+        <header class="hero">
+            <span class="hero-badge">Multi-Agent Autonomous Intelligence</span>
+            <h1>Autonomous research <em>without</em> hallucinated shortcuts.</h1>
+            <p class="hero-desc">Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.</p>
+        </header>
+
+        <!-- Main Query Launchpad -->
+        <div class="liquid-glass" id="queryCard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+                <div class="modes-section-title" style="margin-bottom: 0;">Select Research Mode</div>
+                <button type="button" class="btn-secondary" onclick="openSettingsModal()" style="padding: 0.35rem 0.8rem; font-size: 0.78rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                    <span>⚙️</span>
+                    <span id="activeProviderPillText">LLM Settings</span>
+                </button>
+            </div>
+
+            <!-- Mode Selection Cards -->
+            <div class="mode-grid">
+                <div class="mode-card active" data-mode="research" onclick="selectMode('research', 3)">
+                    <div class="mode-card-header">
+                        <span class="mode-icon-title">🔬 Research</span>
+                        <span class="mode-badge">3 Rounds</span>
                     </div>
-                    <button class="rail-btn active" id="railNewBtn" title="New Inquiry" onclick="resetConsole()">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
-                    </button>
-                    <button class="rail-btn" title="Focus Query" onclick="focusQueryInput()">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    </button>
-                    <button class="rail-btn" title="View Latest Report" onclick="showLatestReportOrAlert()">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                    </button>
-                    <button class="rail-btn" title="API Docs" onclick="window.open('/docs', '_blank')">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10M6 10h10"/></svg>
-                    </button>
-                    <button class="rail-btn" title="Cycle Suggestions" onclick="cyclePrompts()">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </button>
+                    <p class="mode-desc">Balanced analytical research. Evidence gathering, contradiction check, and structured citations.</p>
                 </div>
-                <div class="rail-bottom">
-                    <button class="rail-btn settings-gear-btn" title="LLM Provider &amp; Settings" onclick="openSettingsModal()">
-                        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="3"/>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        </svg>
-                    </button>
-                    <div class="user-avatar" title="Researcher Workspace">
-                        <span>R</span>
+
+                <div class="mode-card" data-mode="study" onclick="selectMode('study', 2)">
+                    <div class="mode-card-header">
+                        <span class="mode-icon-title">🎓 Study</span>
+                        <span class="mode-badge">2 Rounds</span>
                     </div>
+                    <p class="mode-desc">Educational mastery. First-principles Feynman explanations, practice quiz, and glossary.</p>
                 </div>
-            </aside>
 
-            <!-- Console Main Workspace -->
-            <div class="console-main">
-                <!-- Greeting Section -->
-                <div class="greeting-section" id="greetingSection">
-                    <h1 class="greeting-title">
-                        Hi there, <span class="gradient-name">Researcher</span>
-                    </h1>
-                    <div class="greeting-sub">What would like to know?</div>
-                    <p class="greeting-desc">Use one of the most common prompts below or use your own to begin</p>
+                <div class="mode-card" data-mode="brief" onclick="selectMode('brief', 1)">
+                    <div class="mode-card-header">
+                        <span class="mode-icon-title">⚡ Brief</span>
+                        <span class="mode-badge">1 Round</span>
+                    </div>
+                    <p class="mode-desc">Rapid executive briefing. Bottom Line Up Front (BLUF), top takeaways, and action items.</p>
+                </div>
 
-                    <!-- 4 Quick Suggestion Prompt Cards -->
-                    <div class="prompt-cards-grid" id="promptCardsGrid"></div>
+                <div class="mode-card" data-mode="deep" onclick="selectMode('deep', 4)">
+                    <div class="mode-card-header">
+                        <span class="mode-icon-title">🏛️ Deep</span>
+                        <span class="mode-badge">4 Rounds</span>
+                    </div>
+                    <p class="mode-desc">Exhaustive academic dive. Rigorous literature review, arXiv whitepapers, and contradiction matrix.</p>
+                </div>
+            </div>
 
-                    <button class="refresh-prompts-btn" onclick="cyclePrompts()">
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+            <!-- Quick Suggestions Cards (4 Cards + Refresh) -->
+            <div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); font-weight: 500;">Quick Prompts</span>
+                    <button type="button" class="refresh-prompts-btn" onclick="cyclePrompts()">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                         <span>Refresh Prompts</span>
                     </button>
                 </div>
+                <div class="prompt-cards-grid" id="promptCardsGrid"></div>
+            </div>
 
-                <!-- Floating Input Card -->
-                <div class="floating-input-card" id="floatingInputCard">
-                    <div class="input-top-row">
-                        <textarea id="queryText" placeholder="Ask whatever you want...." rows="2" oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
-                        
-                        <!-- Scope Selector Pill -->
-                        <div class="scope-selector-container">
-                            <button class="scope-pill-btn" id="scopePillBtn" onclick="toggleScopeDropdown(event)">
-                                <span id="scopeIcon">🌐</span>
-                                <span id="scopeLabel">All Web</span>
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                            </button>
-                            <div class="scope-dropdown-menu" id="scopeDropdownMenu">
-                                <div class="scope-item active" onclick="selectScopeMode('research', '🌐', 'All Web', 3)">
-                                    <span class="scope-item-icon">🌐</span>
-                                    <div>
-                                        <div class="scope-item-name">All Web (Research)</div>
-                                        <div class="scope-item-desc">Balanced multi-round evidence &amp; citations</div>
-                                    </div>
-                                </div>
-                                <div class="scope-item" onclick="selectScopeMode('study', '🎓', 'Study Deep', 2)">
-                                    <span class="scope-item-icon">🎓</span>
-                                    <div>
-                                        <div class="scope-item-name">Study Deep (Feynman)</div>
-                                        <div class="scope-item-desc">First-principles breakdown with practice quiz</div>
-                                    </div>
-                                </div>
-                                <div class="scope-item" onclick="selectScopeMode('brief', '⚡', 'Executive Brief', 1)">
-                                    <span class="scope-item-icon">⚡</span>
-                                    <div>
-                                        <div class="scope-item-name">Executive Brief (Rapid)</div>
-                                        <div class="scope-item-desc">BLUF executive summary and top takeaways</div>
-                                    </div>
-                                </div>
-                                <div class="scope-item" onclick="selectScopeMode('deep', '🏛️', 'Academic Deep', 4)">
-                                    <span class="scope-item-icon">🏛️</span>
-                                    <div>
-                                        <div class="scope-item-name">Academic Deep (Exhaustive)</div>
-                                        <div class="scope-item-desc">Comprehensive literature and whitepapers</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Bottom Toolbar -->
-                    <div class="input-bottom-bar">
-                        <div class="input-actions-left">
-                            <!-- Rounds Pill Selector -->
-                            <div class="rounds-pill-wrapper">
-                                <button class="pill-btn" id="roundsPillBtn" onclick="toggleRoundsDropdown(event)">
-                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
-                                    <span id="roundsLabel">3 Rounds</span>
-                                    <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-                                </button>
-                                <div class="rounds-dropdown-menu" id="roundsDropdownMenu">
-                                    <div class="rounds-item" onclick="selectRounds(1)">1 Round (Fast Brief)</div>
-                                    <div class="rounds-item" onclick="selectRounds(2)">2 Rounds (Focused)</div>
-                                    <div class="rounds-item active" onclick="selectRounds(3)">3 Rounds (Balanced)</div>
-                                    <div class="rounds-item" onclick="selectRounds(4)">4 Rounds (Deep Dive)</div>
-                                    <div class="rounds-item" onclick="selectRounds(5)">5 Rounds (Exhaustive)</div>
-                                </div>
-                            </div>
-
-                            <!-- Settings Button -->
-                            <button class="pill-btn" onclick="openSettingsModal()" title="Configure LLM Provider &amp; API Keys">
-                                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                                <span id="activeProviderPillText">LLM Settings</span>
-                            </button>
-                        </div>
-
-                        <div class="input-actions-right">
-                            <span class="char-counter" id="charCounter">0/2000</span>
-                            <button class="send-arrow-btn" id="submitBtn" onclick="launchPipeline()" title="Launch Research Fleet">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
-                    </div>
+            <!-- Query Area -->
+            <div class="form-group query-area">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="queryText">Research Question or Topic</label>
+                    <span class="char-counter" id="charCounter">0/2000</span>
                 </div>
+                <textarea id="queryText" placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?" oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
+                <div class="suggestions">
+                    <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.25rem;">Try:</span>
+                    <span class="suggestion-pill" onclick="setQuery('What are the latest breakthroughs in room-temperature solid-state batteries?')">Solid-state batteries</span>
+                    <span class="suggestion-pill" onclick="setQuery('Explain quantum computing and qubit superposition from first principles')">Quantum computing</span>
+                    <span class="suggestion-pill" onclick="setQuery('State space models (Mamba) vs Transformers: architectural trade-offs')">Mamba vs Transformers</span>
+                </div>
+            </div>
 
-                <!-- Hidden Input for compatibility -->
-                <input type="hidden" id="maxRounds" value="3">
+            <!-- Action Row -->
+            <div class="action-row">
+                <div class="rounds-picker">
+                    <label for="maxRounds" style="white-space: nowrap;">Rounds:</label>
+                    <select id="maxRounds" style="width: auto; padding: 0.5rem 1rem;">
+                        <option value="1">1 Round (Fast)</option>
+                        <option value="2">2 Rounds</option>
+                        <option value="3" selected>3 Rounds (Balanced)</option>
+                        <option value="4">4 Rounds</option>
+                        <option value="5">5 Rounds (Max)</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="submitBtn" onclick="launchPipeline()">
+                    <span>Launch Research Fleet</span>
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
 
                 <!-- Live Pipeline Execution Tracker -->
                 <div class="liquid-glass" id="progressCard" style="display: none; margin-top: 1.5rem;">
@@ -1428,8 +984,6 @@
                         <div class="sources-grid" id="citationsList"></div>
                     </div>
                 </div>
-            </div>
-        </div>
 
         <!-- Settings Popup Modal ("the configuration will go to a settings popup") -->
         <div class="settings-modal-backdrop" id="settingsModal" onclick="closeSettingsModal(event)">
@@ -1563,24 +1117,34 @@
         }
 
         // Rotating prompt suggestion sets matching the screenshot cards
+        function selectMode(mode, defaultRounds) {
+            selectedMode = mode;
+            document.querySelectorAll(".mode-card").forEach(c => {
+                c.classList.toggle("active", c.dataset.mode === mode);
+            });
+            if (defaultRounds) {
+                document.getElementById("maxRounds").value = String(defaultRounds);
+            }
+        }
+
         const PROMPT_SETS = [
             [
-                { text: "Write a to-do list for a personal project or research task", icon: "👤", query: "Create an organized research agenda and prioritized milestone checklist for a deep research project" },
-                { text: "Generate an executive briefing on solid-state battery commercialization", icon: "✉️", query: "What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?" },
-                { text: "Summarise the latest breakthroughs in post-quantum cryptography", icon: "💬", query: "Summarize NIST post-quantum cryptography standards and enterprise migration timeline" },
-                { text: "How does AI work in a technical capacity: Mamba vs Transformers", icon: "🎛️", query: "State space models (Mamba) vs Transformers: architectural trade-offs and efficiency benchmarks" }
+                { text: "Compare solid-state lithium-metal batteries with silicon-anode tech for EVs in 2026", icon: "🔋", mode: "research", rounds: 3, query: "What are the key technical barriers and breakthroughs in commercial solid-state lithium-metal batteries as of 2026?" },
+                { text: "Explain quantum computing and qubit superposition using first-principles Feynman method", icon: "⚛️", mode: "study", rounds: 2, query: "Explain quantum computing, qubit superposition, and topological error correction from first principles" },
+                { text: "Synthesize an executive brief on EU AI Act compliance timelines and penalty caps", icon: "📋", mode: "brief", rounds: 1, query: "EU AI Act compliance checklist, enforcement timelines, and legal penalties for AI developers" },
+                { text: "Deep literature dive on State Space Models (Mamba) vs Transformers for 1M context", icon: "🏛️", mode: "deep", rounds: 4, query: "State space models (Mamba) vs Transformers: architectural trade-offs and efficiency benchmarks for ultra-long context" }
             ],
             [
-                { text: "Competitive landscape & benchmark matrix of open-source AI agents", icon: "👤", query: "Competitive landscape and benchmark matrix of open-source LLM autonomous agents in 2026" },
-                { text: "Analyze recent scientific claims regarding room-temperature superconductivity", icon: "✉️", query: "Analyze recent scientific claims and replication data regarding room-temperature superconductivity" },
-                { text: "Summarise EU AI Act compliance checklist for open-source AI developers", icon: "💬", query: "EU AI Act compliance checklist and legal implications for open-source AI developers in 2026" },
-                { text: "How does speculative decoding work in modern LLM inference engines", icon: "🎛️", query: "Explain speculative decoding algorithms and latency gains in modern LLM inference engines" }
+                { text: "What are the engineering roadblocks in commercial nuclear fusion power plants?", icon: "⚡", mode: "research", rounds: 3, query: "Engineering bottlenecks, plasma confinement, and tritium breeding in commercial fusion reactors" },
+                { text: "Teach me Rust memory safety, borrow checker, and zero-cost abstractions from scratch", icon: "🦀", mode: "study", rounds: 2, query: "Rust memory model, borrow checker semantics, and zero-cost abstractions explained pedagogically" },
+                { text: "Executive brief on Post-Quantum Cryptography (PQC) NIST standards and migration", icon: "🛡️", mode: "brief", rounds: 1, query: "NIST post-quantum cryptography standards and enterprise migration timeline" },
+                { text: "Exhaustive review of reasoning models (DeepSeek-R1, o1, o3) test-time compute scaling", icon: "🧠", mode: "deep", rounds: 4, query: "Test-time compute scaling and reinforcement learning in reasoning models like DeepSeek-R1, o1, and o3" }
             ],
             [
-                { text: "Deep dive into zero-knowledge rollups vs optimistic rollups scalability", icon: "👤", query: "Zero-knowledge proof rollups vs optimistic rollups: comparative throughput and finality" },
-                { text: "Explain quantum computing qubit superposition & error correction from first principles", icon: "✉️", query: "Explain quantum computing, qubit superposition, and topological error correction from first principles" },
-                { text: "Analyze global semiconductor supply chain bottlenecks and High-NA lithography", icon: "💬", query: "Global semiconductor supply chain bottlenecks and High-NA EUV lithography deployment" },
-                { text: "Autonomous drone swarm algorithms: collision avoidance and mesh telemetry", icon: "🎛️", query: "Autonomous drone swarm algorithms: distributed collision avoidance and mesh radio telemetry" }
+                { text: "Evaluate room-temperature superconductor claims and reproducible verification tests", icon: "🧪", mode: "research", rounds: 3, query: "Evaluate recent room-temperature superconductor claims and independent replication tests" },
+                { text: "Study guide: explain Transformer attention mechanisms and KV cache optimization", icon: "🎓", mode: "study", rounds: 2, query: "Attention mechanisms, FlashAttention, and KV cache compression in LLMs explained from first principles" },
+                { text: "Brief on agentic AI workflows: MCP (Model Context Protocol) enterprise adoption", icon: "🤖", mode: "brief", rounds: 1, query: "Model Context Protocol (MCP) architecture and enterprise adoption trends in 2026" },
+                { text: "Academic literature review on multimodal diffusion models vs autoregressive video gen", icon: "🎥", mode: "deep", rounds: 4, query: "Multimodal diffusion models vs autoregressive video generation architectures: a comprehensive comparative review" }
             ]
         ];
         let currentPromptSetIndex = 0;
@@ -1595,6 +1159,9 @@
                 card.className = "prompt-card";
                 card.onclick = () => {
                     setQuery(p.query);
+                    if (p.mode && p.rounds) {
+                        selectMode(p.mode, p.rounds);
+                    }
                     focusQueryInput();
                 };
                 card.innerHTML = `
@@ -1852,8 +1419,7 @@
             saveSettings();
 
             // UI Transitions
-            document.getElementById("greetingSection").style.display = "none";
-            document.getElementById("floatingInputCard").style.display = "none";
+            document.getElementById("queryCard").style.display = "none";
             document.getElementById("progressCard").style.display = "block";
             document.getElementById("reportCard").style.display = "none";
             document.getElementById("submitBtn").disabled = true;
@@ -2056,8 +1622,7 @@
             stopLiveTimer();
             document.getElementById("reportCard").style.display = "none";
             document.getElementById("progressCard").style.display = "none";
-            document.getElementById("greetingSection").style.display = "block";
-            document.getElementById("floatingInputCard").style.display = "block";
+            document.getElementById("queryCard").style.display = "block";
             document.getElementById("submitBtn").disabled = false;
             document.getElementById("queryText").value = "";
             updateCharCount();

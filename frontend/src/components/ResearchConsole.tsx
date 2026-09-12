@@ -11,15 +11,13 @@ import {
   Printer,
   Settings,
   RefreshCw,
-  ArrowRight,
-  Plus,
-  Search,
-  MessageSquare,
-  FileText,
   X,
-  ChevronDown,
+  Eye,
+  EyeOff,
+  Search,
 } from "lucide-react";
 import { marked } from "marked";
+import { CustomSelect, SelectOption } from "./ui/CustomSelect";
 
 interface ModeOption {
   id: string;
@@ -60,39 +58,14 @@ const MODES: ModeOption[] = [
   },
 ];
 
-const SCOPES = [
-  {
-    id: "research",
-    icon: "🌐",
-    label: "All Web",
-    title: "All Web (Research)",
-    desc: "Balanced multi-round evidence & citations",
-    rounds: 3,
-  },
-  {
-    id: "study",
-    icon: "🎓",
-    label: "Study Deep",
-    title: "Study Deep (Feynman)",
-    desc: "First-principles breakdown with practice quiz",
-    rounds: 2,
-  },
-  {
-    id: "brief",
-    icon: "⚡",
-    label: "Executive Brief",
-    title: "Executive Brief (Rapid)",
-    desc: "BLUF executive summary and top takeaways",
-    rounds: 1,
-  },
-  {
-    id: "deep",
-    icon: "🏛️",
-    label: "Academic Deep",
-    title: "Academic Deep (Exhaustive)",
-    desc: "Comprehensive literature and whitepapers",
-    rounds: 4,
-  },
+const STAGES = [
+  { id: "coord", name: "Coordinator", stageNum: "Stage 1" },
+  { id: "search", name: "Search Fleet", stageNum: "Stage 2" },
+  { id: "valid", name: "Validator", stageNum: "Stage 3" },
+  { id: "extract", name: "Extractor", stageNum: "Stage 4" },
+  { id: "conflict", name: "Contradictions", stageNum: "Stage 5" },
+  { id: "synth", name: "Synthesizer", stageNum: "Stage 6" },
+  { id: "verify", name: "Verifier", stageNum: "Stage 7" },
 ];
 
 const PROMPT_SETS = [
@@ -142,56 +115,44 @@ const PROMPT_SETS = [
       rounds: 1,
     },
     {
-      text: "Exhaustive review of reasoning models (DeepSeek-R1, o1, o3) test-time compute scaling",
-      icon: "🧠",
+      text: "Comprehensive arXiv analysis on multimodal reasoning in vision-language foundation models",
+      icon: "🌌",
       mode: "deep",
       rounds: 4,
     },
   ],
   [
     {
-      text: "Evaluate room-temperature superconductor claims and reproducible verification tests",
-      icon: "🧪",
+      text: "Evaluate room-temperature superconductor claims and historical replication attempts",
+      icon: "🔬",
       mode: "research",
       rounds: 3,
     },
     {
-      text: "Study guide: explain Transformer attention mechanisms and KV cache optimization",
-      icon: "🎓",
+      text: "How does the raft consensus algorithm ensure distributed state machine consistency?",
+      icon: "🧭",
       mode: "study",
       rounds: 2,
     },
     {
-      text: "Brief on agentic AI workflows: MCP (Model Context Protocol) enterprise adoption",
-      icon: "🤖",
+      text: "Summary of FDA breakthrough pathway requirements for AI diagnostic software",
+      icon: "🏥",
       mode: "brief",
       rounds: 1,
     },
     {
-      text: "Academic literature review on multimodal diffusion models vs autoregressive video gen",
-      icon: "🎥",
+      text: "Exhaustive taxonomy of KV-cache compression and sparse attention mechanisms for LLMs",
+      icon: "🧠",
       mode: "deep",
       rounds: 4,
     },
   ],
 ];
 
-const STAGES = [
-  { id: "coord", name: "Coordinator", stageNum: "Stage 1" },
-  { id: "search", name: "Search Fleet", stageNum: "Stage 2" },
-  { id: "valid", name: "Validator", stageNum: "Stage 3" },
-  { id: "extract", name: "Extractor", stageNum: "Stage 4" },
-  { id: "conflict", name: "Contradictions", stageNum: "Stage 5" },
-  { id: "synth", name: "Synthesizer", stageNum: "Stage 6" },
-  { id: "verify", name: "Verifier", stageNum: "Stage 7" },
-];
-
 const API_BASE = (
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
   "http://localhost:8000"
 ).replace(/\/$/, "");
-
-import { CustomSelect, SelectOption } from "./ui/CustomSelect";
 
 const PROVIDER_OPTIONS: SelectOption<string>[] = [
   { value: "", label: "Auto-detect from key" },
@@ -200,13 +161,13 @@ const PROVIDER_OPTIONS: SelectOption<string>[] = [
   { value: "openrouter", label: "OpenRouter (Universal)" },
   { value: "openai_compatible", label: "Google Gemini (gemini-2.0-flash)" },
   { value: "groq", label: "Groq (Ultra-fast Llama-3.3, DeepSeek)" },
-  { value: "deepseek", label: "DeepSeek Direct (V3 & R1)" },
-  { value: "ollama", label: "Ollama Local (11434)" },
+  { value: "cerebras", label: "Cerebras (Ultra-fast 2000+ tok/s)" },
   { value: "ollama_cloud", label: "Ollama Cloud (ollama.com)" },
+  { value: "deepseek", label: "DeepSeek Direct (V3 & R1)" },
+  { value: "ollama", label: "Ollama Local (http://localhost:11434)" },
   { value: "mistral", label: "Mistral AI" },
   { value: "together", label: "Together AI" },
   { value: "xai", label: "xAI (Grok-2)" },
-  { value: "cerebras", label: "Cerebras (Ultra-fast)" },
 ];
 
 const ROUNDS_OPTIONS: SelectOption<number>[] = [
@@ -227,13 +188,13 @@ const MODEL_PRESETS: Record<string, string[]> = {
   ],
   openai_compatible: ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"],
   groq: ["llama-3.3-70b-versatile", "deepseek-r1-distill-llama-70b", "llama-3.1-8b-instant"],
+  cerebras: ["llama3.3-70b", "llama3.1-8b"],
+  ollama_cloud: ["llama3.3", "qwen2.5:72b", "deepseek-r1"],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
   ollama: ["llama3.2", "qwen2.5:7b", "deepseek-r1:8b"],
-  ollama_cloud: ["llama3.3", "qwen2.5:72b", "deepseek-r1"],
   mistral: ["mistral-large-latest", "codestral-latest", "mistral-small-latest"],
   together: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "deepseek-ai/DeepSeek-V3"],
   xai: ["grok-2-latest", "grok-beta"],
-  cerebras: ["llama3.3-70b", "llama3.1-8b"],
 };
 
 export function ResearchConsole() {
@@ -245,10 +206,8 @@ export function ResearchConsole() {
   const [baseUrl, setBaseUrl] = useState("");
   const [modelOverride, setModelOverride] = useState("");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showKey, setShowKey] = useState(false);
   const [promptSetIdx, setPromptSetIdx] = useState(0);
-  const [scopeOpen, setScopeOpen] = useState(false);
-  const [roundsOpen, setRoundsOpen] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Execution state
   const [loading, setLoading] = useState(false);
@@ -267,7 +226,9 @@ export function ResearchConsole() {
   const [copied, setCopied] = useState(false);
 
   const pollRef = useRef<any>(null);
+  const timerIntervalRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const formatDuration = (sec: number): string => {
     if (sec < 60) return `${sec}s`;
@@ -312,6 +273,24 @@ export function ResearchConsole() {
     localStorage.setItem("vanta_model_override", modelOverride.trim());
   };
 
+  const cyclePrompts = () => {
+    setPromptSetIdx((prev) => (prev + 1) % PROMPT_SETS.length);
+  };
+
+  const handlePromptCardClick = (card: { text: string; mode: string; rounds: number }) => {
+    setQuery(card.text);
+    setMode(card.mode);
+    setRounds(card.rounds);
+    textareaRef.current?.focus();
+  };
+
+  const handleQueryKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      launchPipeline();
+    }
+  };
+
   const launchPipeline = async () => {
     if (!query.trim()) {
       alert("Please enter a research topic or question.");
@@ -319,7 +298,7 @@ export function ResearchConsole() {
     }
     if (!apiKey.trim()) {
       setShowSettingsModal(true);
-      alert("Please provide an LLM API key in Settings.");
+      alert("Please provide an LLM API key in Settings (OpenAI, Anthropic, Gemini, Groq, Cerebras, etc.).");
       return;
     }
 
@@ -333,6 +312,12 @@ export function ResearchConsole() {
     setFinalDuration(null);
     setJobStats(null);
     addLog(`Initializing multi-agent dispatch in [${mode.toUpperCase()}] mode...`);
+
+    // Start live timer
+    if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    timerIntervalRef.current = setInterval(() => {
+      setTimerSeconds((prev) => prev + 1);
+    }, 1000);
 
     try {
       const res = await fetch(`${API_BASE}/v1/research`, {
@@ -362,6 +347,7 @@ export function ResearchConsole() {
       startPolling(data.id);
     } catch (err: any) {
       alert(`Launch error: ${err.message}`);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       setLoading(false);
     }
   };
@@ -372,7 +358,6 @@ export function ResearchConsole() {
 
     pollRef.current = setInterval(async () => {
       elapsed += 2;
-      setTimerSeconds(elapsed);
       try {
         const res = await fetch(`${API_BASE}/v1/research/${id}`, {
           headers: { Authorization: `Bearer ${apiKey.trim()}` },
@@ -384,41 +369,45 @@ export function ResearchConsole() {
         if (job.status === "running") {
           const currentPct = Math.min(92, Math.max(15, elapsed * 5));
           setProgress(currentPct);
-          if (job.duration_seconds) setTimerSeconds(job.duration_seconds);
 
           if (currentPct < 25) {
             setActiveStageIndex(1);
-            if (elapsed % 4 === 0) addLog("SearchAgent decomposing sub-queries & fetching web indexes...");
+            addLog("Executing web searches across distributed engines...");
           } else if (currentPct < 45) {
             setActiveStageIndex(2);
-            if (elapsed % 4 === 0) addLog("ValidatorAgent evaluating domain authority and source trust...");
+            addLog("Extracting raw document content and filtering noise...");
           } else if (currentPct < 65) {
             setActiveStageIndex(3);
-            if (elapsed % 4 === 0) addLog("ExtractorAgent distilling structured claims & cross-referencing memory...");
+            addLog("Cross-validating facts and checking domain authority...");
           } else if (currentPct < 80) {
             setActiveStageIndex(4);
-            if (elapsed % 4 === 0) addLog("ContradictionAgent resolving factual conflicts across evidence...");
+            addLog("Analyzing contradictory claims and testing edge hypotheses...");
           } else {
             setActiveStageIndex(5);
-            if (elapsed % 4 === 0) addLog("SynthesizerAgent compiling comprehensive report with inline citations...");
+            addLog("Synthesizing comprehensive report dossier...");
           }
         } else if (job.status === "completed") {
           clearInterval(pollRef.current);
+          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
           setProgress(100);
           setActiveStageIndex(6);
-          const dur = job.duration_seconds ?? elapsed;
-          setFinalDuration(dur);
-          addLog(`Pipeline completed in ${formatDuration(dur)}! Verifying citations and finalizing output.`);
-          setReport(job.report || { summary: "Research completed.", body_md: job.result });
+          addLog("Pipeline complete! Final report synthesized.");
+          if (job.duration_seconds) setFinalDuration(job.duration_seconds);
+          setReport({
+            summary: job.summary,
+            body_md: job.report_markdown || job.report || job.body_md || "",
+            citations: job.citations || [],
+          });
           setLoading(false);
         } else if (job.status === "failed") {
           clearInterval(pollRef.current);
-          addLog(`Job failed: ${job.error || "Unknown error"}`);
-          alert(`Research job failed: ${job.error || "Unknown error"}`);
+          if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+          addLog(`Job failed: ${job.error || "Unknown execution error"}`);
+          alert(`Research failed: ${job.error || "Unknown execution error"}`);
           setLoading(false);
         }
-      } catch (e: any) {
-        console.error("Polling error:", e);
+      } catch (err: any) {
+        addLog(`Polling check failed: ${err.message}`);
       }
     }, 2000);
   };
@@ -427,8 +416,8 @@ export function ResearchConsole() {
     if (!report?.body_md) return;
     const durStr = finalDuration ? formatDuration(finalDuration) : `${timerSeconds}s`;
     const metadataHeader = [
-      `# Research Dossier: ${query}`,
-      `> Mode: ${mode.toUpperCase()} | Duration: ${durStr} | Sources: ${report.citations?.length || 0} | Date: ${new Date().toLocaleDateString()}`,
+      `# ${query}`,
+      `*Generated with Vanta Deep Research in ${durStr} (${mode} mode)*`,
       `\n---\n\n`,
     ].join("\n");
     navigator.clipboard.writeText(metadataHeader + report.body_md);
@@ -493,6 +482,7 @@ export function ResearchConsole() {
         headers: { Authorization: `Bearer ${apiKey.trim()}` },
       });
       if (pollRef.current) clearInterval(pollRef.current);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       addLog("Research job cancelled by user.");
       setLoading(false);
     } catch {
@@ -511,346 +501,290 @@ export function ResearchConsole() {
     }, 50);
   };
 
-  const cyclePrompts = () => {
-    setPromptSetIdx((prev) => (prev + 1) % PROMPT_SETS.length);
-  };
-
-  const handlePromptCardClick = (card: { text: string; mode: string; rounds: number }) => {
-    setQuery(card.text);
-    setMode(card.mode);
-    setRounds(card.rounds);
-    textareaRef.current?.focus();
-  };
-
-  const handleQueryKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      launchPipeline();
-    }
-  };
-
-  const currentScope = SCOPES.find((s) => s.id === mode) || SCOPES[0];
   const activePromptCards = PROMPT_SETS[promptSetIdx];
 
   return (
-    <>
-      <div className="console-window">
-        {/* Sidebar Rail */}
-        <aside className="sidebar-rail">
-          <div className="rail-top">
-            <div className="rail-logo" title="Vanta Deep Research">
-              <Sparkles className="size-5 text-indigo-400" />
+    <div className="w-full space-y-6">
+      {/* ============================================================ */}
+      {/* 1. Main Query Launchpad Card (Original liquid-glass UI)        */}
+      {/* ============================================================ */}
+      {!loading && !report && (
+        <div className="console-card" id="queryCard">
+          {/* Top Bar: Mode Title & Sleek Settings Trigger Pill */}
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="modes-section-title !mb-0 text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">
+              Select Research Mode
             </div>
             <button
               type="button"
-              className={`rail-btn ${!loading && !report ? "active" : ""}`}
-              title="New Inquiry"
-              onClick={resetConsole}
-            >
-              <Plus className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="rail-btn"
-              title="Focus Query"
-              onClick={() => textareaRef.current?.focus()}
-            >
-              <Search className="size-4" />
-            </button>
-            <button
-              type="button"
-              className={`rail-btn ${report ? "active" : ""}`}
-              title="View Report"
-              onClick={() => {
-                if (!report) alert("No completed report available yet.");
-              }}
-            >
-              <MessageSquare className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="rail-btn"
-              title="API Documentation"
-              onClick={() => window.open(`${API_BASE}/docs`, "_blank")}
-            >
-              <FileText className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="rail-btn"
-              title="Cycle Suggestions"
-              onClick={cyclePrompts}
-            >
-              <RefreshCw className="size-4" />
-            </button>
-          </div>
-          <div className="rail-bottom">
-            <button
-              type="button"
-              className="rail-btn"
-              title="LLM Provider &amp; Settings"
               onClick={() => setShowSettingsModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
             >
-              <Settings className="size-4" />
+              <Settings className="size-3.5 text-indigo-400" />
+              <span>{provider ? `${provider.toUpperCase()} Settings` : "⚙️ LLM Settings"}</span>
             </button>
-            <div className="user-avatar" title="Researcher Workspace">
-              <span>R</span>
-            </div>
           </div>
-        </aside>
 
-        {/* Console Main Workspace */}
-        <div className="console-main">
-          {!loading && !report && (
-            <>
-              {/* Greeting Section */}
-              <div className="greeting-section">
-                <h1 className="greeting-title">
-                  Hi there, <span className="gradient-name">Researcher</span>
-                </h1>
-                <div className="greeting-sub">What would like to know?</div>
-                <p className="greeting-desc">
-                  Use one of the most common prompts below or use your own to begin
-                </p>
-
-                {/* 4 Quick Suggestion Prompt Cards */}
-                <div className="prompt-cards-grid">
-                  {activePromptCards.map((card, idx) => (
-                    <div
-                      key={idx}
-                      className="prompt-card"
-                      onClick={() => handlePromptCardClick(card)}
-                    >
-                      <span className="prompt-card-text">{card.text}</span>
-                      <span className="prompt-card-icon">{card.icon}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  className="refresh-prompts-btn"
-                  onClick={cyclePrompts}
+          {/* Mode Selection Grid (4 original cards) */}
+          <div className="mode-grid">
+            {MODES.map((m) => {
+              const active = mode === m.id;
+              return (
+                <div
+                  key={m.id}
+                  onClick={() => handleModeSelect(m)}
+                  className={`mode-card ${active ? "active" : ""}`}
                 >
-                  <RefreshCw className="size-3.5" />
-                  <span>Refresh Prompts</span>
-                </button>
-              </div>
-
-              {/* Floating Input Card */}
-              <div className="floating-input-card">
-                <div className="input-top-row">
-                  <textarea
-                    ref={textareaRef}
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={handleQueryKeyDown}
-                    placeholder="Ask whatever you want...."
-                    rows={2}
-                  />
-
-                  {/* Scope Selector Pill */}
-                  <div className="scope-selector-container">
-                    <button
-                      type="button"
-                      className="scope-pill-btn"
-                      onClick={() => {
-                        setScopeOpen(!scopeOpen);
-                        setRoundsOpen(false);
-                      }}
-                    >
-                      <span>{currentScope.icon}</span>
-                      <span>{currentScope.label}</span>
-                      <ChevronDown className="size-3" />
-                    </button>
-
-                    {scopeOpen && (
-                      <div className="scope-dropdown-menu">
-                        {SCOPES.map((sc) => (
-                          <div
-                            key={sc.id}
-                            className={`scope-item ${mode === sc.id ? "active" : ""}`}
-                            onClick={() => {
-                              setMode(sc.id);
-                              setRounds(sc.rounds);
-                              setScopeOpen(false);
-                            }}
-                          >
-                            <span className="text-sm">{sc.icon}</span>
-                            <div>
-                              <div className="scope-item-name">{sc.title}</div>
-                              <div className="scope-item-desc">{sc.desc}</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                  <div className="mode-card-header">
+                    <span className="mode-icon-title">{m.name}</span>
+                    <span className="mode-badge">{m.badge}</span>
                   </div>
+                  <p className="mode-desc">{m.desc}</p>
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Bottom Toolbar */}
-                <div className="input-bottom-bar">
-                  <div className="input-actions-left">
-                    {/* Rounds Pill */}
-                    <div className="rounds-pill-wrapper">
-                      <button
-                        type="button"
-                        className="pill-btn"
-                        onClick={() => {
-                          setRoundsOpen(!roundsOpen);
-                          setScopeOpen(false);
-                        }}
-                      >
-                        <Plus className="size-3" />
-                        <span>{rounds} Rounds</span>
-                        <ChevronDown className="size-2.5" />
-                      </button>
-
-                      {roundsOpen && (
-                        <div className="rounds-dropdown-menu">
-                          {[
-                            { r: 1, label: "1 Round (Fast Brief)" },
-                            { r: 2, label: "2 Rounds (Focused)" },
-                            { r: 3, label: "3 Rounds (Balanced)" },
-                            { r: 4, label: "4 Rounds (Deep Dive)" },
-                            { r: 5, label: "5 Rounds (Exhaustive)" },
-                          ].map((item) => (
-                            <div
-                              key={item.r}
-                              className={`rounds-item ${rounds === item.r ? "active" : ""}`}
-                              onClick={() => {
-                                setRounds(item.r);
-                                setRoundsOpen(false);
-                              }}
-                            >
-                              {item.label}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Settings Pill */}
-                    <button
-                      type="button"
-                      className="pill-btn"
-                      onClick={() => setShowSettingsModal(true)}
-                      title="Configure LLM Provider &amp; API Keys"
-                    >
-                      <Settings className="size-3" />
-                      <span>{provider ? provider : "LLM Settings"}</span>
-                    </button>
-                  </div>
-
-                  <div className="input-actions-right">
-                    <span className="char-counter">{query.length}/2000</span>
-                    <button
-                      type="button"
-                      className="send-arrow-btn"
-                      onClick={launchPipeline}
-                      disabled={!query.trim()}
-                      title="Launch Research Fleet"
-                    >
-                      <ArrowRight className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-      {/* 3. Live Pipeline Execution Tracker Card */}
-      {loading && (
-        <div className="console-card">
-          <div className="flex items-center justify-between border-b border-white/10 pb-5">
-            <div>
-              <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-                {mode.toUpperCase()} MODE
-              </span>
-              <h2
-                className="mt-2 text-2xl font-normal text-foreground"
-                style={{ fontFamily: "'Instrument Serif', serif" }}
-              >
-                Research in Progress
-              </h2>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-mono text-xs text-emerald-300">
-                <Clock className="size-3 text-emerald-400 animate-spin" />
-                <span>{formatDuration(timerSeconds)}</span>
+          {/* Quick Suggestions Cards (4 Cards + Refresh Prompts Button) */}
+          <div className="mt-5 mb-5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
+                Quick Prompts
               </span>
               <button
                 type="button"
+                onClick={cyclePrompts}
+                className="refresh-prompts-btn !mb-0 text-xs text-muted-foreground hover:text-white cursor-pointer"
+              >
+                <RefreshCw className="size-3.5" />
+                <span>Refresh Prompts</span>
+              </button>
+            </div>
+
+            <div className="prompt-cards-grid">
+              {activePromptCards.map((card, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => handlePromptCardClick(card)}
+                  className="prompt-card group"
+                >
+                  <p className="prompt-card-text group-hover:text-white">{card.text}</p>
+                  <div className="prompt-card-icon">
+                    <span>{card.icon}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Query Textarea Area with Character Counter */}
+          <div className="form-group query-area mt-4">
+            <div className="flex items-center justify-between mb-1">
+              <label htmlFor="queryText" className="text-xs font-medium text-slate-300">
+                Research Question or Topic
+              </label>
+              <span className="char-counter text-[11px] font-mono text-muted-foreground">
+                {query.length}/2000
+              </span>
+            </div>
+            <textarea
+              id="queryText"
+              ref={textareaRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleQueryKeyDown}
+              maxLength={2000}
+              placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?"
+              className="form-input min-h-[110px] resize-y"
+            />
+
+            {/* Suggestions Chips */}
+            <div className="suggestions flex flex-wrap items-center gap-1.5 mt-2">
+              <span className="text-[11px] text-muted-foreground mr-1">Try:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("What are the latest breakthroughs in room-temperature solid-state batteries?");
+                  textareaRef.current?.focus();
+                }}
+                className="suggestion-pill text-xs"
+              >
+                Solid-state batteries
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("Explain quantum computing and qubit superposition from first principles");
+                  textareaRef.current?.focus();
+                }}
+                className="suggestion-pill text-xs"
+              >
+                Quantum computing
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("State space models (Mamba) vs Transformers: architectural trade-offs");
+                  textareaRef.current?.focus();
+                }}
+                className="suggestion-pill text-xs"
+              >
+                Mamba vs Transformers
+              </button>
+            </div>
+          </div>
+
+          {/* Action Row: Rounds Picker & Submit Button */}
+          <div className="action-row mt-5 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
+            <div className="flex items-center gap-3">
+              <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                Rounds:
+              </label>
+              <div className="w-[180px]">
+                <CustomSelect<number>
+                  options={ROUNDS_OPTIONS}
+                  value={rounds}
+                  onChange={(val) => setRounds(val)}
+                  dropDirection="up"
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              id="submitBtn"
+              onClick={launchPipeline}
+              disabled={loading}
+              className="btn-primary cursor-pointer flex items-center gap-2"
+            >
+              <span>Launch Research Fleet</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 2. Live Pipeline Execution Tracker Card                       */}
+      {/* ============================================================ */}
+      {loading && (
+        <div className="console-card" id="progressCard">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-4 mb-4">
+            <div>
+              <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
+                {mode.toUpperCase()} MODE ACTIVE
+              </span>
+              <h2
+                className="text-2xl font-normal sm:text-3xl text-foreground mt-0.5"
+                style={{ fontFamily: "'Instrument Serif', serif" }}
+              >
+                {query || "Research in Progress"}
+              </h2>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-mono text-xs font-medium text-emerald-400">
+                <Clock className="size-3 animate-spin" />
+                <span>⏱️ {formatDuration(timerSeconds)}</span>
+              </div>
+              <button
+                type="button"
                 onClick={cancelJob}
-                className="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-300 transition-colors hover:bg-red-500/20 cursor-pointer"
               >
                 Cancel Job
               </button>
             </div>
           </div>
 
-          {/* 7 Pipeline Stages */}
-          <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
+          {/* 7-Stage Visual Pipeline Tracker */}
+          <div className="pipeline-tracker">
             {STAGES.map((s, idx) => {
-              const isDone = idx < activeStageIndex;
-              const isActive = idx === activeStageIndex;
+              let cls = "pending";
+              if (idx < activeStageIndex) cls = "completed";
+              else if (idx === activeStageIndex) cls = "active";
               return (
-                <div
-                  key={s.id}
-                  className={`rounded-lg border p-3 text-center transition-all ${
-                    isActive
-                      ? "border-white/50 bg-white/10 text-white shadow-[0_0_15px_rgba(255,255,255,0.15)]"
-                      : isDone
-                      ? "border-emerald-500/40 bg-emerald-500/5 text-emerald-300"
-                      : "border-white/5 bg-black/20 text-muted-foreground/60 opacity-60"
-                  }`}
-                >
-                  <div className="text-[10px] uppercase tracking-wider">{s.stageNum}</div>
-                  <div className="mt-1 text-xs font-semibold">{s.name}</div>
+                <div key={s.id} className={`pipeline-stage ${cls}`}>
+                  <div className="stage-num">{s.stageNum}</div>
+                  <div className="stage-name">{s.name}</div>
                 </div>
               );
             })}
           </div>
 
-          {/* Progress Track */}
-          <div className="relative mt-6 h-2 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-400 to-teal-300 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+          {/* Animated Glowing Progress Bar */}
+          <div className="progress-bar-wrap mt-4">
+            <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
           </div>
 
-          {/* Terminal Live Logs */}
-          <div
-            ref={terminalRef}
-            className="mt-6 max-h-48 overflow-y-auto rounded-lg border border-white/10 bg-black/60 p-4 font-mono text-xs leading-relaxed text-slate-300"
-          >
+          {/* Metrics Status Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 my-4">
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Duration</span>
+              <span className="text-sm font-semibold text-emerald-400 font-mono">
+                {formatDuration(timerSeconds)}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Searches</span>
+              <span className="text-sm font-semibold text-slate-200 font-mono">
+                {jobStats?.searches_count || Math.max(1, activeStageIndex * 2)}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Sources</span>
+              <span className="text-sm font-semibold text-cyan-400 font-mono">
+                {jobStats?.citations?.length || Math.max(0, activeStageIndex * 3)}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Tokens</span>
+              <span className="text-sm font-semibold text-amber-400 font-mono">
+                {jobStats?.usage?.tokens_in ? `${Math.round((jobStats.usage.tokens_in + jobStats.usage.tokens_out) / 1000)}k` : "Stream"}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Reasoning</span>
+              <span className="text-sm font-semibold text-purple-400 font-mono">
+                {modelOverride || provider || "Auto"}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-lg border border-white/10 bg-white/[0.02] text-center">
+              <span className="text-[10px] uppercase text-muted-foreground block">Status</span>
+              <span className="text-sm font-semibold text-indigo-400 font-mono">
+                {progress}%
+              </span>
+            </div>
+          </div>
+
+          {/* Terminal Logs */}
+          <div ref={terminalRef} className="log-terminal">
             {logs.map((l, i) => (
-              <div key={i} className="py-0.5">
-                {l}
-              </div>
+              <div key={i}>{l}</div>
             ))}
+            <div className="animate-pulse">_</div>
           </div>
         </div>
       )}
 
-      {/* 4. Final Report Card */}
+      {/* ============================================================ */}
+      {/* 3. Synthesized Research Report Card                           */}
+      {/* ============================================================ */}
       {report && (
-        <div className="console-card">
-          <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-center">
+        <div className="console-card" id="reportCard">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5">
             <div>
-              <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white">
-                SYNTHESIZED REPORT
+              <span className="text-[10px] font-semibold tracking-[0.2em] text-cyan-400 uppercase">
+                SYNTHESIZED REPORT &middot; {mode.toUpperCase()} MODE
               </span>
               <h2
-                className="mt-2 text-3xl font-normal sm:text-4xl"
+                className="mt-2 text-3xl font-normal sm:text-4xl text-foreground"
                 style={{ fontFamily: "'Instrument Serif', serif" }}
               >
-                Research Findings
+                {query || "Research Findings"}
               </h2>
 
               {/* Rich Stats Bar */}
-              <div className="flex flex-wrap items-center gap-2 mt-3 pt-1 text-xs font-mono text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
                 <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-emerald-300">
                   <Clock className="size-3" />
                   {formatDuration(finalDuration ?? timerSeconds)}
@@ -881,7 +815,7 @@ export function ResearchConsole() {
                 type="button"
                 onClick={copyMarkdown}
                 title="Copy full Markdown with metadata"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
               >
                 {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
                 {copied ? "Copied" : "Copy Markdown"}
@@ -890,7 +824,7 @@ export function ResearchConsole() {
                 type="button"
                 onClick={downloadMarkdown}
                 title="Download formatted Markdown (.md) file"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
               >
                 <Download className="size-3.5" />
                 Download .md
@@ -899,7 +833,7 @@ export function ResearchConsole() {
                 type="button"
                 onClick={exportJsonDossier}
                 title="Export complete structured JSON research dossier"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
               >
                 <FileJson className="size-3.5 text-amber-400" />
                 Export JSON
@@ -908,7 +842,7 @@ export function ResearchConsole() {
                 type="button"
                 onClick={printReport}
                 title="Print or Save as PDF"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
               >
                 <Printer className="size-3.5 text-cyan-400" />
                 Print / PDF
@@ -916,7 +850,7 @@ export function ResearchConsole() {
               <button
                 type="button"
                 onClick={resetConsole}
-                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black shadow-md transition-colors hover:bg-slate-200"
+                className="rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-black shadow-md transition-colors hover:bg-slate-200 cursor-pointer"
               >
                 New Inquiry
               </button>
@@ -931,13 +865,13 @@ export function ResearchConsole() {
             </div>
           )}
 
-          {/* Rich Rendered Markdown Content */}
+          {/* Rendered Markdown Report */}
           <div
             className="prose prose-invert mt-6 max-w-none text-slate-200 text-sm leading-relaxed space-y-4 [&_h1]:text-2xl [&_h1]:font-serif [&_h1]:text-white [&_h2]:text-xl [&_h2]:font-serif [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:border-b [&_h2]:border-white/10 [&_h2]:pb-1.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-emerald-500/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/5 [&_th]:p-2 [&_td]:border [&_td]:border-white/10 [&_td]:p-2 [&_a]:text-cyan-400 [&_a]:underline hover:[&_a]:text-cyan-300 [&_strong]:text-white"
             dangerouslySetInnerHTML={{ __html: marked.parse(report.body_md || "") as string }}
           />
 
-          {/* Rich Verified Sources Gallery */}
+          {/* Verified Sources Gallery */}
           {report.citations && report.citations.length > 0 && (
             <div className="mt-10 border-t border-white/10 pt-6">
               <div className="flex items-center justify-between mb-4">
@@ -983,10 +917,10 @@ export function ResearchConsole() {
           )}
         </div>
       )}
-        </div>
-      </div>
 
-      {/* Settings Modal Dialog */}
+      {/* ============================================================ */}
+      {/* 4. Sleek Settings Popup Modal Dialog                         */}
+      {/* ============================================================ */}
       {showSettingsModal && (
         <div
           className="settings-modal-backdrop"
@@ -996,28 +930,30 @@ export function ResearchConsole() {
             className="settings-modal-dialog"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Modal Header */}
             <div className="settings-modal-header">
               <div className="settings-modal-title">
-                <div className="size-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white">
-                  <Settings className="size-4" />
-                </div>
+                <Settings className="size-5 text-indigo-400" />
                 <div>
-                  <h3>LLM Provider &amp; Settings</h3>
-                  <p>Credentials stored locally in your browser</p>
+                  <h3>LLM Provider &amp; API Key Configuration</h3>
+                  <p>Choose an AI provider and enter your API key to power the multi-agent research fleet.</p>
                 </div>
               </div>
               <button
                 type="button"
                 className="modal-close-btn"
                 onClick={() => setShowSettingsModal(false)}
+                title="Close"
               >
                 <X className="size-5" />
               </button>
             </div>
 
+            {/* Modal Body */}
             <div className="settings-modal-body">
+              {/* Provider Selection */}
               <div className="form-group">
-                <label>Provider</label>
+                <label className="text-xs font-medium text-slate-300">LLM Provider</label>
                 <CustomSelect
                   options={PROVIDER_OPTIONS}
                   value={provider}
@@ -1028,23 +964,53 @@ export function ResearchConsole() {
                 />
               </div>
 
+              {/* API Key with Show/Hide toggle */}
               <div className="form-group">
-                <label htmlFor="modalApiKey">API Key (Stored in browser)</label>
-                <input
-                  type="password"
-                  id="modalApiKey"
-                  value={apiKey}
-                  onChange={(e) => {
-                    setApiKey(e.target.value);
-                    saveSettings();
-                  }}
-                  placeholder="sk-ant-... or sk-... or AIza..."
-                  className="form-input"
-                />
+                <div className="flex items-center justify-between">
+                  <label htmlFor="modalApiKey" className="text-xs font-medium text-slate-300">
+                    API Key (Stored locally in your browser)
+                  </label>
+                  <span className="text-[11px] text-muted-foreground">
+                    {apiKey ? "✓ Key Set" : "Required"}
+                  </span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showKey ? "text" : "password"}
+                    id="modalApiKey"
+                    value={apiKey}
+                    onChange={(e) => {
+                      setApiKey(e.target.value);
+                      saveSettings();
+                    }}
+                    placeholder={
+                      provider === "groq"
+                        ? "gsk_..."
+                        : provider === "cerebras"
+                        ? "csk-..."
+                        : provider === "ollama_cloud"
+                        ? "Ollama Cloud API Key..."
+                        : provider === "anthropic"
+                        ? "sk-ant-..."
+                        : "sk-..."
+                    }
+                    className="form-input pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowKey(!showKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white cursor-pointer"
+                  >
+                    {showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
 
+              {/* Base URL */}
               <div className="form-group">
-                <label htmlFor="modalBaseUrl">Optional Base URL Override</label>
+                <label htmlFor="modalBaseUrl" className="text-xs font-medium text-slate-300">
+                  Optional Base URL Override
+                </label>
                 <input
                   type="text"
                   id="modalBaseUrl"
@@ -1053,16 +1019,25 @@ export function ResearchConsole() {
                     setBaseUrl(e.target.value);
                     saveSettings();
                   }}
-                  placeholder="https://api.openai.com/v1 or http://localhost:11434/v1"
+                  placeholder={
+                    provider === "ollama"
+                      ? "http://localhost:11434/v1"
+                      : provider === "ollama_cloud"
+                      ? "https://ollama.com/v1"
+                      : "https://api.openai.com/v1"
+                  }
                   className="form-input"
                 />
               </div>
 
+              {/* Model Override & Presets */}
               <div className="form-group">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="modalModelOverride">Model Override (Optional)</label>
+                  <label htmlFor="modalModelOverride" className="text-xs font-medium text-slate-300">
+                    Model Override (Optional)
+                  </label>
                   {provider === "openrouter" && (
-                    <span className="text-[11px] text-amber-400/90 font-medium">Free tier limit: 20 req/min &amp; 50 req/day</span>
+                    <span className="text-[11px] text-amber-400 font-medium">Free tier rate limited</span>
                   )}
                 </div>
                 <input
@@ -1074,9 +1049,13 @@ export function ResearchConsole() {
                     saveSettings();
                   }}
                   placeholder={
-                    provider === "openrouter"
-                      ? "e.g. google/gemini-2.0-flash-001 or deepseek/deepseek-chat"
-                      : "e.g. gpt-4o, claude-3-5-sonnet-latest, or gemini-2.0-flash"
+                    provider === "groq"
+                      ? "llama-3.3-70b-versatile"
+                      : provider === "cerebras"
+                      ? "llama3.3-70b"
+                      : provider === "ollama_cloud"
+                      ? "llama3.3"
+                      : "e.g. gpt-4o or claude-3-5-sonnet-latest"
                   }
                   className="form-input"
                 />
@@ -1092,7 +1071,7 @@ export function ResearchConsole() {
                           setModelOverride(preset);
                           saveSettings();
                         }}
-                        className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors border ${
+                        className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors border cursor-pointer ${
                           modelOverride === preset
                             ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold"
                             : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border-white/10"
@@ -1108,21 +1087,37 @@ export function ResearchConsole() {
                   <div className="mt-2.5 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-amber-300 text-xs leading-relaxed">
                     <span className="text-amber-400 font-bold shrink-0">⚠️ Notice:</span>
                     <div>
-                      <strong>Free tier rate-limit hazard:</strong> Default openrouter models (<code className="text-white bg-black/30 px-1 py-0.5 rounded">openrouter/free</code>) strictly throttle concurrent requests and may return empty findings. Click a preset chip above (e.g. <code className="text-emerald-300 bg-black/30 px-1 py-0.5 rounded">google/gemini-2.0-flash-001</code>) for fast and uninterrupted research.
+                      Default openrouter free models strictly throttle requests. Click a preset chip above (e.g. <code className="text-emerald-300 bg-black/30 px-1 py-0.5 rounded">google/gemini-2.0-flash-001</code>) for fast, uninterrupted research.
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Modal Footer */}
             <div className="settings-modal-footer">
               <button
                 type="button"
-                className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-slate-200 cursor-pointer"
+                onClick={() => {
+                  setApiKey("");
+                  setBaseUrl("");
+                  setModelOverride("");
+                  localStorage.removeItem("vanta_api_key");
+                  localStorage.removeItem("vanta_key");
+                  localStorage.removeItem("vanta_base_url");
+                  localStorage.removeItem("vanta_model_override");
+                }}
+                className="px-3.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                Clear Settings
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   saveSettings();
                   setShowSettingsModal(false);
                 }}
+                className="btn-primary !py-1.5 !px-5 text-xs font-semibold cursor-pointer"
               >
                 Save &amp; Close
               </button>
@@ -1130,6 +1125,6 @@ export function ResearchConsole() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
