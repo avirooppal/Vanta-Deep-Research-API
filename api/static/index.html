@@ -798,88 +798,63 @@
 
         <!-- Main Query Launchpad -->
         <div class="liquid-glass" id="queryCard">
+            <!-- Header Row above Textarea -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
-                <div class="modes-section-title" style="margin-bottom: 0;">Select Research Mode</div>
-                <button type="button" class="btn-secondary" onclick="openSettingsModal()" style="padding: 0.35rem 0.8rem; font-size: 0.78rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
-                    <span>⚙️</span>
-                    <span id="activeProviderPillText">LLM Settings</span>
-                </button>
-            </div>
-
-            <!-- Mode Selection Cards -->
-            <div class="mode-grid">
-                <div class="mode-card active" data-mode="research" onclick="selectMode('research', 3)">
-                    <div class="mode-card-header">
-                        <span class="mode-icon-title">🔬 Research</span>
-                        <span class="mode-badge">3 Rounds</span>
-                    </div>
-                    <p class="mode-desc">Balanced analytical research. Evidence gathering, contradiction check, and structured citations.</p>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label for="queryText" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); margin-bottom: 0;">
+                        Research Inquiry
+                    </label>
+                    <span style="font-size: 0.725rem; color: var(--text-dim);">(Press Enter to launch)</span>
                 </div>
-
-                <div class="mode-card" data-mode="study" onclick="selectMode('study', 2)">
-                    <div class="mode-card-header">
-                        <span class="mode-icon-title">🎓 Study</span>
-                        <span class="mode-badge">2 Rounds</span>
-                    </div>
-                    <p class="mode-desc">Educational mastery. First-principles Feynman explanations, practice quiz, and glossary.</p>
-                </div>
-
-                <div class="mode-card" data-mode="brief" onclick="selectMode('brief', 1)">
-                    <div class="mode-card-header">
-                        <span class="mode-icon-title">⚡ Brief</span>
-                        <span class="mode-badge">1 Round</span>
-                    </div>
-                    <p class="mode-desc">Rapid executive briefing. Bottom Line Up Front (BLUF), top takeaways, and action items.</p>
-                </div>
-
-                <div class="mode-card" data-mode="deep" onclick="selectMode('deep', 4)">
-                    <div class="mode-card-header">
-                        <span class="mode-icon-title">🏛️ Deep</span>
-                        <span class="mode-badge">4 Rounds</span>
-                    </div>
-                    <p class="mode-desc">Exhaustive academic dive. Rigorous literature review, arXiv whitepapers, and contradiction matrix.</p>
-                </div>
-            </div>
-
-            <!-- Quick Suggestions Cards (4 Cards + Refresh) -->
-            <div style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
-                    <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-muted); font-weight: 500;">Quick Prompts</span>
-                    <button type="button" class="refresh-prompts-btn" onclick="cyclePrompts()">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-                        <span>Refresh Prompts</span>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span class="char-counter" id="charCounter">0/2000</span>
+                    <button type="button" class="btn-secondary" onclick="openSettingsModal()" style="padding: 0.35rem 0.8rem; font-size: 0.78rem; border-radius: 9999px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                        <span>⚙️</span>
+                        <span id="activeProviderPillText">LLM Settings</span>
                     </button>
                 </div>
-                <div class="prompt-cards-grid" id="promptCardsGrid"></div>
             </div>
 
-            <!-- Query Area -->
+            <!-- Big Chat Textarea Area -->
             <div class="form-group query-area">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <label for="queryText">Research Question or Topic</label>
-                    <span class="char-counter" id="charCounter">0/2000</span>
-                </div>
-                <textarea id="queryText" placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?" oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
-                <div class="suggestions">
+                <textarea id="queryText" rows="6" style="min-height: 175px; padding: 1.15rem; font-size: 1rem; line-height: 1.6; resize: vertical; background: rgba(0,0,0,0.5); border: 1px solid var(--glass-border); border-radius: 12px; color: var(--text-main); width: 100%; box-sizing: border-box; outline: none; transition: border-color 0.2s;" placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026? Enter any research question, hypothesis, or topic..." oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
+
+                <div class="suggestions" style="margin-top: 0.65rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;">
                     <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.25rem;">Try:</span>
-                    <span class="suggestion-pill" onclick="setQuery('What are the latest breakthroughs in room-temperature solid-state batteries?')">Solid-state batteries</span>
-                    <span class="suggestion-pill" onclick="setQuery('Explain quantum computing and qubit superposition from first principles')">Quantum computing</span>
-                    <span class="suggestion-pill" onclick="setQuery('State space models (Mamba) vs Transformers: architectural trade-offs')">Mamba vs Transformers</span>
+                    <span class="suggestion-pill" onclick="setQuery('What are the latest breakthroughs in room-temperature solid-state batteries?', 'research')">Solid-state batteries</span>
+                    <span class="suggestion-pill" onclick="setQuery('Explain quantum computing and qubit superposition from first principles', 'study')">Quantum computing (Study)</span>
+                    <span class="suggestion-pill" onclick="setQuery('Synthesize an executive brief on EU AI Act compliance timelines and penalty caps', 'brief')">EU AI Act (Brief)</span>
+                    <span class="suggestion-pill" onclick="setQuery('State space models (Mamba) vs Transformers: architectural trade-offs', 'deep')">Mamba vs Transformers (Deep)</span>
                 </div>
             </div>
 
-            <!-- Action Row -->
-            <div class="action-row">
-                <div class="rounds-picker">
-                    <label for="maxRounds" style="white-space: nowrap;">Rounds:</label>
-                    <select id="maxRounds" style="width: auto; padding: 0.5rem 1rem;">
-                        <option value="1">1 Round (Fast)</option>
-                        <option value="2">2 Rounds</option>
-                        <option value="3" selected>3 Rounds (Balanced)</option>
-                        <option value="4">4 Rounds</option>
-                        <option value="5">5 Rounds (Max)</option>
-                    </select>
+            <!-- Action Row Under Textarea: Mode Selector, Rounds Selector, & Submit -->
+            <div class="action-row" style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.25rem;">
+                <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.25rem;">
+                    <!-- Mode Selector (Just like rounds) -->
+                    <div class="mode-picker" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="modeSelect" style="white-space: nowrap; font-size: 0.825rem; color: var(--text-muted); margin-bottom: 0;">Mode:</label>
+                        <select id="modeSelect" onchange="onModeSelectChange(this.value)" style="width: auto; min-width: 215px; padding: 0.55rem 0.85rem; font-size: 0.85rem; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid var(--glass-border); color: var(--text-main);">
+                            <option value="research" selected>🔬 Research (3 Rounds)</option>
+                            <option value="study">🎓 Study Deep (2 Rounds)</option>
+                            <option value="brief">⚡ Executive Brief (1 Round)</option>
+                            <option value="deep">🏛️ Academic Deep (4 Rounds)</option>
+                        </select>
+                    </div>
+
+                    <!-- Rounds Selector -->
+                    <div class="rounds-picker" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <label for="maxRounds" style="white-space: nowrap; font-size: 0.825rem; color: var(--text-muted); margin-bottom: 0;">Rounds:</label>
+                        <select id="maxRounds" style="width: auto; min-width: 175px; padding: 0.55rem 0.85rem; font-size: 0.85rem; border-radius: 8px; background: rgba(0,0,0,0.45); border: 1px solid var(--glass-border); color: var(--text-main);">
+                            <option value="1">1 Round (Fast)</option>
+                            <option value="2">2 Rounds</option>
+                            <option value="3" selected>3 Rounds (Balanced)</option>
+                            <option value="4">4 Rounds</option>
+                            <option value="5">5 Rounds (Max)</option>
+                        </select>
+                    </div>
                 </div>
+
                 <button class="btn-primary" id="submitBtn" onclick="launchPipeline()">
                     <span>Launch Research Fleet</span>
                     <span>→</span>
@@ -1116,65 +1091,29 @@
             }
         }
 
-        // Rotating prompt suggestion sets matching the screenshot cards
-        function selectMode(mode, defaultRounds) {
+        function onModeSelectChange(mode) {
             selectedMode = mode;
-            document.querySelectorAll(".mode-card").forEach(c => {
-                c.classList.toggle("active", c.dataset.mode === mode);
-            });
-            if (defaultRounds) {
-                document.getElementById("maxRounds").value = String(defaultRounds);
+            const defaults = { research: 3, study: 2, brief: 1, deep: 4 };
+            if (defaults[mode]) {
+                const roundsEl = document.getElementById("maxRounds");
+                if (roundsEl) roundsEl.value = String(defaults[mode]);
             }
         }
 
-        const PROMPT_SETS = [
-            [
-                { text: "Compare solid-state lithium-metal batteries with silicon-anode tech for EVs in 2026", icon: "🔋", mode: "research", rounds: 3, query: "What are the key technical barriers and breakthroughs in commercial solid-state lithium-metal batteries as of 2026?" },
-                { text: "Explain quantum computing and qubit superposition using first-principles Feynman method", icon: "⚛️", mode: "study", rounds: 2, query: "Explain quantum computing, qubit superposition, and topological error correction from first principles" },
-                { text: "Synthesize an executive brief on EU AI Act compliance timelines and penalty caps", icon: "📋", mode: "brief", rounds: 1, query: "EU AI Act compliance checklist, enforcement timelines, and legal penalties for AI developers" },
-                { text: "Deep literature dive on State Space Models (Mamba) vs Transformers for 1M context", icon: "🏛️", mode: "deep", rounds: 4, query: "State space models (Mamba) vs Transformers: architectural trade-offs and efficiency benchmarks for ultra-long context" }
-            ],
-            [
-                { text: "What are the engineering roadblocks in commercial nuclear fusion power plants?", icon: "⚡", mode: "research", rounds: 3, query: "Engineering bottlenecks, plasma confinement, and tritium breeding in commercial fusion reactors" },
-                { text: "Teach me Rust memory safety, borrow checker, and zero-cost abstractions from scratch", icon: "🦀", mode: "study", rounds: 2, query: "Rust memory model, borrow checker semantics, and zero-cost abstractions explained pedagogically" },
-                { text: "Executive brief on Post-Quantum Cryptography (PQC) NIST standards and migration", icon: "🛡️", mode: "brief", rounds: 1, query: "NIST post-quantum cryptography standards and enterprise migration timeline" },
-                { text: "Exhaustive review of reasoning models (DeepSeek-R1, o1, o3) test-time compute scaling", icon: "🧠", mode: "deep", rounds: 4, query: "Test-time compute scaling and reinforcement learning in reasoning models like DeepSeek-R1, o1, and o3" }
-            ],
-            [
-                { text: "Evaluate room-temperature superconductor claims and reproducible verification tests", icon: "🧪", mode: "research", rounds: 3, query: "Evaluate recent room-temperature superconductor claims and independent replication tests" },
-                { text: "Study guide: explain Transformer attention mechanisms and KV cache optimization", icon: "🎓", mode: "study", rounds: 2, query: "Attention mechanisms, FlashAttention, and KV cache compression in LLMs explained from first principles" },
-                { text: "Brief on agentic AI workflows: MCP (Model Context Protocol) enterprise adoption", icon: "🤖", mode: "brief", rounds: 1, query: "Model Context Protocol (MCP) architecture and enterprise adoption trends in 2026" },
-                { text: "Academic literature review on multimodal diffusion models vs autoregressive video gen", icon: "🎥", mode: "deep", rounds: 4, query: "Multimodal diffusion models vs autoregressive video generation architectures: a comprehensive comparative review" }
-            ]
-        ];
-        let currentPromptSetIndex = 0;
-
-        function renderPromptCards() {
-            const container = document.getElementById("promptCardsGrid");
-            if (!container) return;
-            container.innerHTML = "";
-            const set = PROMPT_SETS[currentPromptSetIndex];
-            set.forEach((p) => {
-                const card = document.createElement("div");
-                card.className = "prompt-card";
-                card.onclick = () => {
-                    setQuery(p.query);
-                    if (p.mode && p.rounds) {
-                        selectMode(p.mode, p.rounds);
-                    }
-                    focusQueryInput();
-                };
-                card.innerHTML = `
-                    <div class="prompt-card-text">${p.text}</div>
-                    <div class="prompt-card-icon">${p.icon}</div>
-                `;
-                container.appendChild(card);
-            });
-        }
-
-        function cyclePrompts() {
-            currentPromptSetIndex = (currentPromptSetIndex + 1) % PROMPT_SETS.length;
-            renderPromptCards();
+        function setQuery(text, mode) {
+            const textarea = document.getElementById("queryText");
+            if (textarea) {
+                textarea.value = text;
+                updateCharCount();
+                textarea.focus();
+            }
+            if (mode) {
+                const modeSelect = document.getElementById("modeSelect");
+                if (modeSelect) {
+                    modeSelect.value = mode;
+                    onModeSelectChange(mode);
+                }
+            }
         }
 
         function updateCharCount() {
@@ -1196,48 +1135,9 @@
             const textarea = document.getElementById("queryText");
             if (textarea) {
                 textarea.focus();
-                textarea.scrollIntoView({ behavior: "smooth", block: "center" });
             }
         }
 
-        function toggleScopeDropdown(e) {
-            e.stopPropagation();
-            const menu = document.getElementById("scopeDropdownMenu");
-            const roundsMenu = document.getElementById("roundsDropdownMenu");
-            if (roundsMenu) roundsMenu.style.display = "none";
-            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-        }
-
-        function selectScopeMode(mode, icon, label, defaultRounds) {
-            selectedMode = mode;
-            document.getElementById("scopeIcon").textContent = icon;
-            document.getElementById("scopeLabel").textContent = label;
-            document.querySelectorAll(".scope-item").forEach(item => {
-                item.classList.toggle("active", item.getAttribute("onclick").includes(`'${mode}'`));
-            });
-            if (defaultRounds) {
-                selectRounds(defaultRounds);
-            }
-            document.getElementById("scopeDropdownMenu").style.display = "none";
-        }
-
-        function toggleRoundsDropdown(e) {
-            e.stopPropagation();
-            const menu = document.getElementById("roundsDropdownMenu");
-            const scopeMenu = document.getElementById("scopeDropdownMenu");
-            if (scopeMenu) scopeMenu.style.display = "none";
-            menu.style.display = (menu.style.display === "flex") ? "none" : "flex";
-        }
-
-        function selectRounds(r) {
-            document.getElementById("maxRounds").value = String(r);
-            document.getElementById("roundsLabel").textContent = `${r} Round${r === 1 ? '' : 's'}`;
-            document.querySelectorAll(".rounds-item").forEach(item => {
-                item.classList.toggle("active", item.getAttribute("onclick").includes(`(${r})`));
-            });
-            const menu = document.getElementById("roundsDropdownMenu");
-            if (menu) menu.style.display = "none";
-        }
 
         function updateActiveProviderPill() {
             const prov = document.getElementById("advProvider")?.value;
@@ -1302,10 +1202,6 @@
         window.addEventListener("keydown", (e) => {
             if (e.key === "Escape") {
                 closeSettingsModal();
-                const scopeMenu = document.getElementById("scopeDropdownMenu");
-                const roundsMenu = document.getElementById("roundsDropdownMenu");
-                if (scopeMenu) scopeMenu.style.display = "none";
-                if (roundsMenu) roundsMenu.style.display = "none";
             }
         });
 
@@ -1319,7 +1215,6 @@
             if (savedBaseUrl) document.getElementById("advBaseUrl").value = savedBaseUrl;
             if (savedModel) document.getElementById("advModelOverride").value = savedModel;
             renderPresets();
-            renderPromptCards();
             updateCharCount();
             updateActiveProviderPill();
         });
@@ -1336,11 +1231,6 @@
             localStorage.setItem("vanta_base_url", document.getElementById("advBaseUrl").value.trim());
             localStorage.setItem("vanta_model_override", document.getElementById("advModelOverride").value.trim());
             updateActiveProviderPill();
-        }
-
-        function setQuery(text) {
-            document.getElementById("queryText").value = text;
-            updateCharCount();
         }
 
         function addLog(msg, color = "#cbd5e1") {
@@ -1404,6 +1294,8 @@
             const provider = document.getElementById("advProvider").value;
             const baseUrl = document.getElementById("advBaseUrl").value.trim();
             const modelOverride = document.getElementById("advModelOverride").value.trim();
+            const mode = document.getElementById("modeSelect") ? document.getElementById("modeSelect").value : selectedMode;
+            selectedMode = mode;
 
             if (!query) {
                 alert("Please enter a research inquiry.");
@@ -1411,7 +1303,7 @@
             }
 
             if (!apiKey) {
-                toggleSettings();
+                openSettingsModal();
                 alert("Please provide an LLM API Key (OpenAI, Anthropic, Gemini, Groq, OpenRouter, etc.).");
                 return;
             }

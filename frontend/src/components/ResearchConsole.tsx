@@ -10,11 +10,9 @@ import {
   FileJson,
   Printer,
   Settings,
-  RefreshCw,
   X,
   Eye,
   EyeOff,
-  Search,
 } from "lucide-react";
 import { marked } from "marked";
 import { CustomSelect, SelectOption } from "./ui/CustomSelect";
@@ -58,6 +56,21 @@ const MODES: ModeOption[] = [
   },
 ];
 
+const MODE_SELECT_OPTIONS: SelectOption<string>[] = [
+  { value: "research", label: "🔬 Research (3 Rounds)" },
+  { value: "study", label: "🎓 Study Deep (2 Rounds)" },
+  { value: "brief", label: "⚡ Executive Brief (1 Round)" },
+  { value: "deep", label: "🏛️ Academic Deep (4 Rounds)" },
+];
+
+const ROUNDS_OPTIONS: SelectOption<number>[] = [
+  { value: 1, label: "1 Round (Fast)" },
+  { value: 2, label: "2 Rounds" },
+  { value: 3, label: "3 Rounds (Balanced)" },
+  { value: 4, label: "4 Rounds" },
+  { value: 5, label: "5 Rounds (Max)" },
+];
+
 const STAGES = [
   { id: "coord", name: "Coordinator", stageNum: "Stage 1" },
   { id: "search", name: "Search Fleet", stageNum: "Stage 2" },
@@ -66,87 +79,6 @@ const STAGES = [
   { id: "conflict", name: "Contradictions", stageNum: "Stage 5" },
   { id: "synth", name: "Synthesizer", stageNum: "Stage 6" },
   { id: "verify", name: "Verifier", stageNum: "Stage 7" },
-];
-
-const PROMPT_SETS = [
-  [
-    {
-      text: "Compare solid-state lithium-metal batteries with silicon-anode tech for EVs in 2026",
-      icon: "🔋",
-      mode: "research",
-      rounds: 3,
-    },
-    {
-      text: "Explain quantum computing and qubit superposition using first-principles Feynman method",
-      icon: "⚛️",
-      mode: "study",
-      rounds: 2,
-    },
-    {
-      text: "Synthesize an executive brief on EU AI Act compliance timelines and penalty caps",
-      icon: "📋",
-      mode: "brief",
-      rounds: 1,
-    },
-    {
-      text: "Deep literature dive on State Space Models (Mamba) vs Transformers for 1M context",
-      icon: "🏛️",
-      mode: "deep",
-      rounds: 4,
-    },
-  ],
-  [
-    {
-      text: "What are the engineering roadblocks in commercial nuclear fusion power plants?",
-      icon: "⚡",
-      mode: "research",
-      rounds: 3,
-    },
-    {
-      text: "Teach me Rust memory safety, borrow checker, and zero-cost abstractions from scratch",
-      icon: "🦀",
-      mode: "study",
-      rounds: 2,
-    },
-    {
-      text: "Executive brief on Post-Quantum Cryptography (PQC) NIST standards and migration",
-      icon: "🛡️",
-      mode: "brief",
-      rounds: 1,
-    },
-    {
-      text: "Comprehensive arXiv analysis on multimodal reasoning in vision-language foundation models",
-      icon: "🌌",
-      mode: "deep",
-      rounds: 4,
-    },
-  ],
-  [
-    {
-      text: "Evaluate room-temperature superconductor claims and historical replication attempts",
-      icon: "🔬",
-      mode: "research",
-      rounds: 3,
-    },
-    {
-      text: "How does the raft consensus algorithm ensure distributed state machine consistency?",
-      icon: "🧭",
-      mode: "study",
-      rounds: 2,
-    },
-    {
-      text: "Summary of FDA breakthrough pathway requirements for AI diagnostic software",
-      icon: "🏥",
-      mode: "brief",
-      rounds: 1,
-    },
-    {
-      text: "Exhaustive taxonomy of KV-cache compression and sparse attention mechanisms for LLMs",
-      icon: "🧠",
-      mode: "deep",
-      rounds: 4,
-    },
-  ],
 ];
 
 const API_BASE = (
@@ -168,14 +100,6 @@ const PROVIDER_OPTIONS: SelectOption<string>[] = [
   { value: "mistral", label: "Mistral AI" },
   { value: "together", label: "Together AI" },
   { value: "xai", label: "xAI (Grok-2)" },
-];
-
-const ROUNDS_OPTIONS: SelectOption<number>[] = [
-  { value: 1, label: "1 Round (Fast)" },
-  { value: 2, label: "2 Rounds" },
-  { value: 3, label: "3 Rounds (Balanced)" },
-  { value: 4, label: "4 Rounds" },
-  { value: 5, label: "5 Rounds (Max)" },
 ];
 
 const MODEL_PRESETS: Record<string, string[]> = {
@@ -207,7 +131,6 @@ export function ResearchConsole() {
   const [modelOverride, setModelOverride] = useState("");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showKey, setShowKey] = useState(false);
-  const [promptSetIdx, setPromptSetIdx] = useState(0);
 
   // Execution state
   const [loading, setLoading] = useState(false);
@@ -260,9 +183,12 @@ export function ResearchConsole() {
     }
   };
 
-  const handleModeSelect = (m: ModeOption) => {
-    setMode(m.id);
-    setRounds(m.defaultRounds);
+  const handleModeChange = (newMode: string) => {
+    setMode(newMode);
+    const m = MODES.find((item) => item.id === newMode);
+    if (m) {
+      setRounds(m.defaultRounds);
+    }
   };
 
   const saveSettings = () => {
@@ -271,17 +197,6 @@ export function ResearchConsole() {
     localStorage.setItem("vanta_provider", provider);
     localStorage.setItem("vanta_base_url", baseUrl.trim());
     localStorage.setItem("vanta_model_override", modelOverride.trim());
-  };
-
-  const cyclePrompts = () => {
-    setPromptSetIdx((prev) => (prev + 1) % PROMPT_SETS.length);
-  };
-
-  const handlePromptCardClick = (card: { text: string; mode: string; rounds: number }) => {
-    setQuery(card.text);
-    setMode(card.mode);
-    setRounds(card.rounds);
-    textareaRef.current?.focus();
   };
 
   const handleQueryKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -501,92 +416,40 @@ export function ResearchConsole() {
     }, 50);
   };
 
-  const activePromptCards = PROMPT_SETS[promptSetIdx];
-
   return (
     <div className="w-full space-y-6">
       {/* ============================================================ */}
-      {/* 1. Main Query Launchpad Card (Original liquid-glass UI)        */}
+      {/* 1. Main Query Launchpad Card (Big Chat Area + Mode/Rounds)    */}
       {/* ============================================================ */}
       {!loading && !report && (
         <div className="console-card" id="queryCard">
-          {/* Top Bar: Mode Title & Sleek Settings Trigger Pill */}
-          <div className="flex items-center justify-between mb-3.5">
-            <div className="modes-section-title !mb-0 text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">
-              Select Research Mode
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowSettingsModal(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-            >
-              <Settings className="size-3.5 text-indigo-400" />
-              <span>{provider ? `${provider.toUpperCase()} Settings` : "⚙️ LLM Settings"}</span>
-            </button>
-          </div>
-
-          {/* Mode Selection Grid (4 original cards) */}
-          <div className="mode-grid">
-            {MODES.map((m) => {
-              const active = mode === m.id;
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => handleModeSelect(m)}
-                  className={`mode-card ${active ? "active" : ""}`}
-                >
-                  <div className="mode-card-header">
-                    <span className="mode-icon-title">{m.name}</span>
-                    <span className="mode-badge">{m.badge}</span>
-                  </div>
-                  <p className="mode-desc">{m.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Quick Suggestions Cards (4 Cards + Refresh Prompts Button) */}
-          <div className="mt-5 mb-5">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-                Quick Prompts
-              </span>
-              <button
-                type="button"
-                onClick={cyclePrompts}
-                className="refresh-prompts-btn !mb-0 text-xs text-muted-foreground hover:text-white cursor-pointer"
-              >
-                <RefreshCw className="size-3.5" />
-                <span>Refresh Prompts</span>
-              </button>
-            </div>
-
-            <div className="prompt-cards-grid">
-              {activePromptCards.map((card, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => handlePromptCardClick(card)}
-                  className="prompt-card group"
-                >
-                  <p className="prompt-card-text group-hover:text-white">{card.text}</p>
-                  <div className="prompt-card-icon">
-                    <span>{card.icon}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Query Textarea Area with Character Counter */}
-          <div className="form-group query-area mt-4">
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="queryText" className="text-xs font-medium text-slate-300">
-                Research Question or Topic
+          {/* Top Bar: Inquiry Label, Settings button & Character Counter */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="queryText" className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-300">
+                Research Inquiry
               </label>
+              <span className="hidden sm:inline text-[11px] text-muted-foreground font-normal">
+                (Press Enter to dispatch)
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
               <span className="char-counter text-[11px] font-mono text-muted-foreground">
                 {query.length}/2000
               </span>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(true)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+              >
+                <Settings className="size-3.5 text-indigo-400" />
+                <span>{provider ? `${provider.toUpperCase()} Settings` : "⚙️ LLM Settings"}</span>
+              </button>
             </div>
+          </div>
+
+          {/* Big, Spacious Chat Textarea Area */}
+          <div className="form-group query-area">
             <textarea
               id="queryText"
               ref={textareaRef}
@@ -594,17 +457,18 @@ export function ResearchConsole() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleQueryKeyDown}
               maxLength={2000}
-              placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?"
-              className="form-input min-h-[110px] resize-y"
+              placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026? Enter any research question, hypothesis, or topic..."
+              className="form-input !min-h-[175px] !p-4 !text-base leading-relaxed resize-y !bg-black/50 !border-white/15 focus:!border-white/40 focus:!bg-black/70 shadow-inner"
             />
 
             {/* Suggestions Chips */}
-            <div className="suggestions flex flex-wrap items-center gap-1.5 mt-2">
+            <div className="suggestions flex flex-wrap items-center gap-1.5 mt-2.5">
               <span className="text-[11px] text-muted-foreground mr-1">Try:</span>
               <button
                 type="button"
                 onClick={() => {
                   setQuery("What are the latest breakthroughs in room-temperature solid-state batteries?");
+                  handleModeChange("research");
                   textareaRef.current?.focus();
                 }}
                 className="suggestion-pill text-xs"
@@ -615,41 +479,73 @@ export function ResearchConsole() {
                 type="button"
                 onClick={() => {
                   setQuery("Explain quantum computing and qubit superposition from first principles");
+                  handleModeChange("study");
                   textareaRef.current?.focus();
                 }}
                 className="suggestion-pill text-xs"
               >
-                Quantum computing
+                Quantum computing (Study)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("Synthesize an executive brief on EU AI Act compliance timelines and penalty caps");
+                  handleModeChange("brief");
+                  textareaRef.current?.focus();
+                }}
+                className="suggestion-pill text-xs"
+              >
+                EU AI Act (Brief)
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setQuery("State space models (Mamba) vs Transformers: architectural trade-offs");
+                  handleModeChange("deep");
                   textareaRef.current?.focus();
                 }}
                 className="suggestion-pill text-xs"
               >
-                Mamba vs Transformers
+                Mamba vs Transformers (Deep)
               </button>
             </div>
           </div>
 
-          {/* Action Row: Rounds Picker & Submit Button */}
-          <div className="action-row mt-5 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-3">
-              <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                Rounds:
-              </label>
-              <div className="w-[180px]">
-                <CustomSelect<number>
-                  options={ROUNDS_OPTIONS}
-                  value={rounds}
-                  onChange={(val) => setRounds(val)}
-                  dropDirection="up"
-                />
+          {/* Action Row Under Textarea: Mode Selector, Rounds Selector, & Submit */}
+          <div className="action-row mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Mode Selector (Just like rounds) */}
+              <div className="flex items-center gap-2.5">
+                <label htmlFor="modeSelect" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  Mode:
+                </label>
+                <div className="w-[215px]">
+                  <CustomSelect<string>
+                    options={MODE_SELECT_OPTIONS}
+                    value={mode}
+                    onChange={(val) => handleModeChange(val)}
+                    dropDirection="up"
+                  />
+                </div>
+              </div>
+
+              {/* Rounds Selector */}
+              <div className="flex items-center gap-2.5">
+                <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  Rounds:
+                </label>
+                <div className="w-[175px]">
+                  <CustomSelect<number>
+                    options={ROUNDS_OPTIONS}
+                    value={rounds}
+                    onChange={(val) => setRounds(val)}
+                    dropDirection="up"
+                  />
+                </div>
               </div>
             </div>
 
+            {/* Launch Button */}
             <button
               type="button"
               id="submitBtn"
