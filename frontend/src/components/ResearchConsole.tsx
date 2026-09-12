@@ -1,5 +1,24 @@
 import { useState, useEffect, useRef } from "react";
-import { Check, Copy, Download, Clock, Layers, Globe, Sparkles, FileJson, Printer } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Download,
+  Clock,
+  Layers,
+  Globe,
+  Sparkles,
+  FileJson,
+  Printer,
+  Settings,
+  RefreshCw,
+  ArrowRight,
+  Plus,
+  Search,
+  MessageSquare,
+  FileText,
+  X,
+  ChevronDown,
+} from "lucide-react";
 import { marked } from "marked";
 
 interface ModeOption {
@@ -39,6 +58,122 @@ const MODES: ModeOption[] = [
     desc: "Exhaustive academic dive. Rigorous literature review, arXiv whitepapers, and contradiction matrix.",
     defaultRounds: 4,
   },
+];
+
+const SCOPES = [
+  {
+    id: "research",
+    icon: "🌐",
+    label: "All Web",
+    title: "All Web (Research)",
+    desc: "Balanced multi-round evidence & citations",
+    rounds: 3,
+  },
+  {
+    id: "study",
+    icon: "🎓",
+    label: "Study Deep",
+    title: "Study Deep (Feynman)",
+    desc: "First-principles breakdown with practice quiz",
+    rounds: 2,
+  },
+  {
+    id: "brief",
+    icon: "⚡",
+    label: "Executive Brief",
+    title: "Executive Brief (Rapid)",
+    desc: "BLUF executive summary and top takeaways",
+    rounds: 1,
+  },
+  {
+    id: "deep",
+    icon: "🏛️",
+    label: "Academic Deep",
+    title: "Academic Deep (Exhaustive)",
+    desc: "Comprehensive literature and whitepapers",
+    rounds: 4,
+  },
+];
+
+const PROMPT_SETS = [
+  [
+    {
+      text: "Compare solid-state lithium-metal batteries with silicon-anode tech for EVs in 2026",
+      icon: "🔋",
+      mode: "research",
+      rounds: 3,
+    },
+    {
+      text: "Explain quantum computing and qubit superposition using first-principles Feynman method",
+      icon: "⚛️",
+      mode: "study",
+      rounds: 2,
+    },
+    {
+      text: "Synthesize an executive brief on EU AI Act compliance timelines and penalty caps",
+      icon: "📋",
+      mode: "brief",
+      rounds: 1,
+    },
+    {
+      text: "Deep literature dive on State Space Models (Mamba) vs Transformers for 1M context",
+      icon: "🏛️",
+      mode: "deep",
+      rounds: 4,
+    },
+  ],
+  [
+    {
+      text: "What are the engineering roadblocks in commercial nuclear fusion power plants?",
+      icon: "⚡",
+      mode: "research",
+      rounds: 3,
+    },
+    {
+      text: "Teach me Rust memory safety, borrow checker, and zero-cost abstractions from scratch",
+      icon: "🦀",
+      mode: "study",
+      rounds: 2,
+    },
+    {
+      text: "Executive brief on Post-Quantum Cryptography (PQC) NIST standards and migration",
+      icon: "🛡️",
+      mode: "brief",
+      rounds: 1,
+    },
+    {
+      text: "Exhaustive review of reasoning models (DeepSeek-R1, o1, o3) test-time compute scaling",
+      icon: "🧠",
+      mode: "deep",
+      rounds: 4,
+    },
+  ],
+  [
+    {
+      text: "Evaluate room-temperature superconductor claims and reproducible verification tests",
+      icon: "🧪",
+      mode: "research",
+      rounds: 3,
+    },
+    {
+      text: "Study guide: explain Transformer attention mechanisms and KV cache optimization",
+      icon: "🎓",
+      mode: "study",
+      rounds: 2,
+    },
+    {
+      text: "Brief on agentic AI workflows: MCP (Model Context Protocol) enterprise adoption",
+      icon: "🤖",
+      mode: "brief",
+      rounds: 1,
+    },
+    {
+      text: "Academic literature review on multimodal diffusion models vs autoregressive video gen",
+      icon: "🎥",
+      mode: "deep",
+      rounds: 4,
+    },
+  ],
 ];
 
 const STAGES = [
@@ -109,7 +244,11 @@ export function ResearchConsole() {
   const [provider, setProvider] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [modelOverride, setModelOverride] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [promptSetIdx, setPromptSetIdx] = useState(0);
+  const [scopeOpen, setScopeOpen] = useState(false);
+  const [roundsOpen, setRoundsOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Execution state
   const [loading, setLoading] = useState(false);
@@ -179,8 +318,8 @@ export function ResearchConsole() {
       return;
     }
     if (!apiKey.trim()) {
-      setShowSettings(true);
-      alert("Please provide an LLM API key (OpenAI, Anthropic, Gemini, Groq, or OpenRouter).");
+      setShowSettingsModal(true);
+      alert("Please provide an LLM API key in Settings.");
       return;
     }
 
@@ -367,213 +506,258 @@ export function ResearchConsole() {
     setProgress(0);
     setLoading(false);
     setLogs([]);
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 50);
   };
 
+  const cyclePrompts = () => {
+    setPromptSetIdx((prev) => (prev + 1) % PROMPT_SETS.length);
+  };
+
+  const handlePromptCardClick = (card: { text: string; mode: string; rounds: number }) => {
+    setQuery(card.text);
+    setMode(card.mode);
+    setRounds(card.rounds);
+    textareaRef.current?.focus();
+  };
+
+  const handleQueryKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      launchPipeline();
+    }
+  };
+
+  const currentScope = SCOPES.find((s) => s.id === mode) || SCOPES[0];
+  const activePromptCards = PROMPT_SETS[promptSetIdx];
+
   return (
-    <div className="w-full space-y-6">
-      {/* 1. Collapsible Settings Bar (Exact Match with localhost:8000) */}
-      <div className="console-card" style={{ padding: "1.25rem" }}>
-        <div
-          className="settings-bar"
-          onClick={() => setShowSettings(!showSettings)}
-        >
-          <div className="settings-label">
-            <span>⚙️</span>
-            <span>LLM Provider &amp; API Key Configuration</span>
-          </div>
-          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>
-            {showSettings ? "[-] Collapse" : "[+] Configure Keys"}
-          </span>
-        </div>
-
-        {showSettings && (
-          <div className="settings-content">
-            <div className="form-group">
-              <label>Provider</label>
-              <CustomSelect
-                options={PROVIDER_OPTIONS}
-                value={provider}
-                onChange={(val) => {
-                  setProvider(val);
-                  localStorage.setItem("vanta_provider", val);
-                }}
-              />
+    <>
+      <div className="console-window">
+        {/* Sidebar Rail */}
+        <aside className="sidebar-rail">
+          <div className="rail-top">
+            <div className="rail-logo" title="Vanta Deep Research">
+              <Sparkles className="size-5 text-indigo-400" />
             </div>
-
-            <div className="form-group">
-              <label htmlFor="apiKey">API Key (Stored locally in browser)</label>
-              <input
-                type="password"
-                id="apiKey"
-                value={apiKey}
-                onChange={(e) => {
-                  setApiKey(e.target.value);
-                  saveSettings();
-                }}
-                placeholder="sk-ant-... or sk-... or AIza..."
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group sm:col-span-2">
-              <label htmlFor="advBaseUrl">Optional Base URL Override</label>
-              <input
-                type="text"
-                id="advBaseUrl"
-                value={baseUrl}
-                onChange={(e) => {
-                  setBaseUrl(e.target.value);
-                  saveSettings();
-                }}
-                placeholder="https://api.openai.com/v1 or http://localhost:11434/v1"
-                className="form-input"
-              />
-            </div>
-
-            <div className="form-group sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label htmlFor="advModelOverride">Model Override (Optional)</label>
-                {provider === "openrouter" && (
-                  <span className="text-[11px] text-amber-400/90 font-medium">Free tier limit: 20 req/min & 50 req/day</span>
-                )}
-              </div>
-              <input
-                type="text"
-                id="advModelOverride"
-                value={modelOverride}
-                onChange={(e) => {
-                  setModelOverride(e.target.value);
-                  saveSettings();
-                }}
-                placeholder={
-                  provider === "openrouter"
-                    ? "e.g. google/gemini-2.0-flash-001, deepseek/deepseek-chat, or meta-llama/llama-3.3-70b-instruct"
-                    : "e.g. gpt-4o, claude-3-5-sonnet-latest, or gemini-2.0-flash"
-                }
-                className="form-input"
-              />
-
-              {MODEL_PRESETS[provider] && (
-                <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                  <span className="text-[11px] text-muted-foreground font-medium mr-1">Presets:</span>
-                  {MODEL_PRESETS[provider].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => {
-                        setModelOverride(preset);
-                        saveSettings();
-                      }}
-                      className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors border ${
-                        modelOverride === preset
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold"
-                          : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border-white/10"
-                      }`}
-                    >
-                      {preset}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {provider === "openrouter" && (!modelOverride.trim() || modelOverride.includes("free")) && (
-                <div className="mt-2.5 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-amber-300 text-xs leading-relaxed">
-                  <span className="text-amber-400 font-bold shrink-0">⚠️ Notice:</span>
-                  <div>
-                    <strong>Free tier rate-limit hazard:</strong> Default openrouter models (<code className="text-white bg-black/30 px-1 py-0.5 rounded">openrouter/free</code>) strictly throttle concurrent requests and may return empty findings. Click a preset chip above (e.g. <code className="text-emerald-300 bg-black/30 px-1 py-0.5 rounded">google/gemini-2.0-flash-001</code>) for fast and uninterrupted research.
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 2. Main Query Launchpad Card (Exact Match with localhost:8000) */}
-      {!loading && !report && (
-        <div className="console-card" id="queryCard">
-          <div className="modes-section-title">Select Research Mode</div>
-
-          <div className="mode-grid">
-            {MODES.map((m) => {
-              const active = mode === m.id;
-              return (
-                <div
-                  key={m.id}
-                  onClick={() => handleModeSelect(m)}
-                  className={`mode-card ${active ? "active" : ""}`}
-                >
-                  <div className="mode-card-header">
-                    <span className="mode-icon-title">{m.name}</span>
-                    <span className="mode-badge">{m.badge}</span>
-                  </div>
-                  <p className="mode-desc">{m.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="form-group query-area">
-            <label htmlFor="queryText">Research Question or Topic</label>
-            <textarea
-              id="queryText"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026?"
-              className="form-textarea"
-            />
-            <div className="suggestions">
-              <span style={{ fontSize: "0.75rem", color: "#64748b", marginRight: "0.25rem" }}>
-                Try:
-              </span>
-              {[
-                {
-                  label: "Solid-state batteries",
-                  text: "What are the latest breakthroughs in room-temperature solid-state batteries?",
-                },
-                {
-                  label: "Quantum computing",
-                  text: "Explain quantum computing and qubit superposition from first principles",
-                },
-                {
-                  label: "Mamba vs Transformers",
-                  text: "State space models (Mamba) vs Transformers: architectural trade-offs",
-                },
-              ].map((s) => (
-                <span
-                  key={s.label}
-                  className="suggestion-pill"
-                  onClick={() => setQuery(s.text)}
-                >
-                  {s.label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <div className="action-row">
-            <div className="rounds-picker flex items-center gap-3">
-              <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">Rounds:</label>
-              <CustomSelect
-                options={ROUNDS_OPTIONS}
-                value={rounds}
-                onChange={(val) => setRounds(val)}
-                className="w-48 sm:w-52"
-                dropDirection="up"
-              />
-            </div>
-
             <button
               type="button"
-              className="btn-primary-action"
-              onClick={launchPipeline}
+              className={`rail-btn ${!loading && !report ? "active" : ""}`}
+              title="New Inquiry"
+              onClick={resetConsole}
             >
-              <span>Launch Research Fleet</span>
-              <span>→</span>
+              <Plus className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="rail-btn"
+              title="Focus Query"
+              onClick={() => textareaRef.current?.focus()}
+            >
+              <Search className="size-4" />
+            </button>
+            <button
+              type="button"
+              className={`rail-btn ${report ? "active" : ""}`}
+              title="View Report"
+              onClick={() => {
+                if (!report) alert("No completed report available yet.");
+              }}
+            >
+              <MessageSquare className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="rail-btn"
+              title="API Documentation"
+              onClick={() => window.open(`${API_BASE}/docs`, "_blank")}
+            >
+              <FileText className="size-4" />
+            </button>
+            <button
+              type="button"
+              className="rail-btn"
+              title="Cycle Suggestions"
+              onClick={cyclePrompts}
+            >
+              <RefreshCw className="size-4" />
             </button>
           </div>
-        </div>
-      )}
+          <div className="rail-bottom">
+            <button
+              type="button"
+              className="rail-btn"
+              title="LLM Provider &amp; Settings"
+              onClick={() => setShowSettingsModal(true)}
+            >
+              <Settings className="size-4" />
+            </button>
+            <div className="user-avatar" title="Researcher Workspace">
+              <span>R</span>
+            </div>
+          </div>
+        </aside>
+
+        {/* Console Main Workspace */}
+        <div className="console-main">
+          {!loading && !report && (
+            <>
+              {/* Greeting Section */}
+              <div className="greeting-section">
+                <h1 className="greeting-title">
+                  Hi there, <span className="gradient-name">Researcher</span>
+                </h1>
+                <div className="greeting-sub">What would like to know?</div>
+                <p className="greeting-desc">
+                  Use one of the most common prompts below or use your own to begin
+                </p>
+
+                {/* 4 Quick Suggestion Prompt Cards */}
+                <div className="prompt-cards-grid">
+                  {activePromptCards.map((card, idx) => (
+                    <div
+                      key={idx}
+                      className="prompt-card"
+                      onClick={() => handlePromptCardClick(card)}
+                    >
+                      <span className="prompt-card-text">{card.text}</span>
+                      <span className="prompt-card-icon">{card.icon}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="refresh-prompts-btn"
+                  onClick={cyclePrompts}
+                >
+                  <RefreshCw className="size-3.5" />
+                  <span>Refresh Prompts</span>
+                </button>
+              </div>
+
+              {/* Floating Input Card */}
+              <div className="floating-input-card">
+                <div className="input-top-row">
+                  <textarea
+                    ref={textareaRef}
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleQueryKeyDown}
+                    placeholder="Ask whatever you want...."
+                    rows={2}
+                  />
+
+                  {/* Scope Selector Pill */}
+                  <div className="scope-selector-container">
+                    <button
+                      type="button"
+                      className="scope-pill-btn"
+                      onClick={() => {
+                        setScopeOpen(!scopeOpen);
+                        setRoundsOpen(false);
+                      }}
+                    >
+                      <span>{currentScope.icon}</span>
+                      <span>{currentScope.label}</span>
+                      <ChevronDown className="size-3" />
+                    </button>
+
+                    {scopeOpen && (
+                      <div className="scope-dropdown-menu">
+                        {SCOPES.map((sc) => (
+                          <div
+                            key={sc.id}
+                            className={`scope-item ${mode === sc.id ? "active" : ""}`}
+                            onClick={() => {
+                              setMode(sc.id);
+                              setRounds(sc.rounds);
+                              setScopeOpen(false);
+                            }}
+                          >
+                            <span className="text-sm">{sc.icon}</span>
+                            <div>
+                              <div className="scope-item-name">{sc.title}</div>
+                              <div className="scope-item-desc">{sc.desc}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Bottom Toolbar */}
+                <div className="input-bottom-bar">
+                  <div className="input-actions-left">
+                    {/* Rounds Pill */}
+                    <div className="rounds-pill-wrapper">
+                      <button
+                        type="button"
+                        className="pill-btn"
+                        onClick={() => {
+                          setRoundsOpen(!roundsOpen);
+                          setScopeOpen(false);
+                        }}
+                      >
+                        <Plus className="size-3" />
+                        <span>{rounds} Rounds</span>
+                        <ChevronDown className="size-2.5" />
+                      </button>
+
+                      {roundsOpen && (
+                        <div className="rounds-dropdown-menu">
+                          {[
+                            { r: 1, label: "1 Round (Fast Brief)" },
+                            { r: 2, label: "2 Rounds (Focused)" },
+                            { r: 3, label: "3 Rounds (Balanced)" },
+                            { r: 4, label: "4 Rounds (Deep Dive)" },
+                            { r: 5, label: "5 Rounds (Exhaustive)" },
+                          ].map((item) => (
+                            <div
+                              key={item.r}
+                              className={`rounds-item ${rounds === item.r ? "active" : ""}`}
+                              onClick={() => {
+                                setRounds(item.r);
+                                setRoundsOpen(false);
+                              }}
+                            >
+                              {item.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Settings Pill */}
+                    <button
+                      type="button"
+                      className="pill-btn"
+                      onClick={() => setShowSettingsModal(true)}
+                      title="Configure LLM Provider &amp; API Keys"
+                    >
+                      <Settings className="size-3" />
+                      <span>{provider ? provider : "LLM Settings"}</span>
+                    </button>
+                  </div>
+
+                  <div className="input-actions-right">
+                    <span className="char-counter">{query.length}/2000</span>
+                    <button
+                      type="button"
+                      className="send-arrow-btn"
+                      onClick={launchPipeline}
+                      disabled={!query.trim()}
+                      title="Launch Research Fleet"
+                    >
+                      <ArrowRight className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
       {/* 3. Live Pipeline Execution Tracker Card */}
       {loading && (
@@ -799,6 +983,153 @@ export function ResearchConsole() {
           )}
         </div>
       )}
-    </div>
+        </div>
+      </div>
+
+      {/* Settings Modal Dialog */}
+      {showSettingsModal && (
+        <div
+          className="settings-modal-backdrop"
+          onClick={() => setShowSettingsModal(false)}
+        >
+          <div
+            className="settings-modal-dialog"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="settings-modal-header">
+              <div className="settings-modal-title">
+                <div className="size-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-white">
+                  <Settings className="size-4" />
+                </div>
+                <div>
+                  <h3>LLM Provider &amp; Settings</h3>
+                  <p>Credentials stored locally in your browser</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setShowSettingsModal(false)}
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="settings-modal-body">
+              <div className="form-group">
+                <label>Provider</label>
+                <CustomSelect
+                  options={PROVIDER_OPTIONS}
+                  value={provider}
+                  onChange={(val) => {
+                    setProvider(val);
+                    localStorage.setItem("vanta_provider", val);
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modalApiKey">API Key (Stored in browser)</label>
+                <input
+                  type="password"
+                  id="modalApiKey"
+                  value={apiKey}
+                  onChange={(e) => {
+                    setApiKey(e.target.value);
+                    saveSettings();
+                  }}
+                  placeholder="sk-ant-... or sk-... or AIza..."
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="modalBaseUrl">Optional Base URL Override</label>
+                <input
+                  type="text"
+                  id="modalBaseUrl"
+                  value={baseUrl}
+                  onChange={(e) => {
+                    setBaseUrl(e.target.value);
+                    saveSettings();
+                  }}
+                  placeholder="https://api.openai.com/v1 or http://localhost:11434/v1"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="modalModelOverride">Model Override (Optional)</label>
+                  {provider === "openrouter" && (
+                    <span className="text-[11px] text-amber-400/90 font-medium">Free tier limit: 20 req/min &amp; 50 req/day</span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  id="modalModelOverride"
+                  value={modelOverride}
+                  onChange={(e) => {
+                    setModelOverride(e.target.value);
+                    saveSettings();
+                  }}
+                  placeholder={
+                    provider === "openrouter"
+                      ? "e.g. google/gemini-2.0-flash-001 or deepseek/deepseek-chat"
+                      : "e.g. gpt-4o, claude-3-5-sonnet-latest, or gemini-2.0-flash"
+                  }
+                  className="form-input"
+                />
+
+                {MODEL_PRESETS[provider] && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span className="text-[11px] text-muted-foreground font-medium mr-1">Presets:</span>
+                    {MODEL_PRESETS[provider].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          setModelOverride(preset);
+                          saveSettings();
+                        }}
+                        className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors border ${
+                          modelOverride === preset
+                            ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-semibold"
+                            : "bg-white/5 hover:bg-white/10 text-muted-foreground hover:text-white border-white/10"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {provider === "openrouter" && (!modelOverride.trim() || modelOverride.includes("free")) && (
+                  <div className="mt-2.5 p-2.5 rounded-md bg-amber-500/10 border border-amber-500/30 flex items-start gap-2 text-amber-300 text-xs leading-relaxed">
+                    <span className="text-amber-400 font-bold shrink-0">⚠️ Notice:</span>
+                    <div>
+                      <strong>Free tier rate-limit hazard:</strong> Default openrouter models (<code className="text-white bg-black/30 px-1 py-0.5 rounded">openrouter/free</code>) strictly throttle concurrent requests and may return empty findings. Click a preset chip above (e.g. <code className="text-emerald-300 bg-black/30 px-1 py-0.5 rounded">google/gemini-2.0-flash-001</code>) for fast and uninterrupted research.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="settings-modal-footer">
+              <button
+                type="button"
+                className="rounded-full bg-white px-5 py-1.5 text-xs font-semibold text-black transition-colors hover:bg-slate-200 cursor-pointer"
+                onClick={() => {
+                  saveSettings();
+                  setShowSettingsModal(false);
+                }}
+              >
+                Save &amp; Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

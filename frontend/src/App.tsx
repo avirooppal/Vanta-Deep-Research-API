@@ -225,25 +225,7 @@ function App() {
 
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
-        <div className="relative z-10 mx-auto max-w-[1100px] px-6 py-6">
-          {/* Exact Hero Header from localhost:8000 */}
-          <header className="py-6 text-center flex flex-col items-center gap-3.5">
-            <span className="text-xs font-medium uppercase tracking-[0.3em] text-muted-foreground">
-              Multi-Agent Autonomous Intelligence
-            </span>
-            <h1
-              className="max-w-[850px] text-4xl font-normal leading-[1.05] tracking-[-0.03em] sm:text-5xl md:text-6xl"
-              style={{ fontFamily: "'Instrument Serif', serif" }}
-            >
-              Autonomous research{" "}
-              <em className="font-normal italic text-muted-foreground">without</em>{" "}
-              hallucinated shortcuts.
-            </h1>
-            <p className="max-w-[600px] text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
-            </p>
-          </header>
-
+        <div className="relative z-10 mx-auto max-w-[1180px] px-4 py-8">
           <ResearchConsole />
         </div>
       ) : (
