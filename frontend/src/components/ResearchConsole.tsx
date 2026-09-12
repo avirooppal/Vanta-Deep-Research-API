@@ -424,31 +424,31 @@ export function ResearchConsole() {
       {!loading && !report && (
         <div className="console-card" id="queryCard">
           {/* Top Bar: Inquiry Label, Settings button & Character Counter */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <label htmlFor="queryText" className="text-xs font-semibold uppercase tracking-[0.15em] text-slate-300">
+          <div className="flex items-center justify-between mb-3.5">
+            <div className="flex items-center gap-2.5">
+              <label htmlFor="queryText" className="text-xs sm:text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
                 Research Inquiry
               </label>
-              <span className="hidden sm:inline text-[11px] text-muted-foreground font-normal">
+              <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
                 (Press Enter to dispatch)
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="char-counter text-[11px] font-mono text-muted-foreground">
+              <span className="char-counter text-xs font-mono text-muted-foreground">
                 {query.length}/2000
               </span>
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               >
                 <Settings className="size-3.5 text-indigo-400" />
-                <span>{provider ? `${provider.toUpperCase()} Settings` : "⚙️ LLM Settings"}</span>
+                <span>{provider ? `${provider.toUpperCase()} Settings` : "LLM Settings"}</span>
               </button>
             </div>
           </div>
 
-          {/* Big, Spacious Chat Textarea Area */}
+          {/* Big, Spacious Chat Textarea Area with Large, Legible Typography */}
           <div className="form-group query-area">
             <textarea
               id="queryText"
@@ -457,13 +457,14 @@ export function ResearchConsole() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleQueryKeyDown}
               maxLength={2000}
+              rows={5}
               placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026? Enter any research question, hypothesis, or topic..."
-              className="form-input !min-h-[175px] !p-4 !text-base leading-relaxed resize-y !bg-black/50 !border-white/15 focus:!border-white/40 focus:!bg-black/70 shadow-inner"
+              className="form-input !min-h-[190px] !p-5 sm:!p-6 !text-lg sm:!text-xl md:!text-2xl !leading-relaxed font-normal resize-y !bg-black/55 !border-white/15 focus:!border-white/40 focus:!bg-black/75 shadow-inner placeholder:!text-slate-500 placeholder:!font-light"
             />
 
             {/* Suggestions Chips */}
-            <div className="suggestions flex flex-wrap items-center gap-1.5 mt-2.5">
-              <span className="text-[11px] text-muted-foreground mr-1">Try:</span>
+            <div className="suggestions flex flex-wrap items-center gap-2 mt-3">
+              <span className="text-xs text-muted-foreground mr-1">Try:</span>
               <button
                 type="button"
                 onClick={() => {
@@ -471,7 +472,7 @@ export function ResearchConsole() {
                   handleModeChange("research");
                   textareaRef.current?.focus();
                 }}
-                className="suggestion-pill text-xs"
+                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
               >
                 Solid-state batteries
               </button>
@@ -482,7 +483,7 @@ export function ResearchConsole() {
                   handleModeChange("study");
                   textareaRef.current?.focus();
                 }}
-                className="suggestion-pill text-xs"
+                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
               >
                 Quantum computing (Study)
               </button>
@@ -493,7 +494,7 @@ export function ResearchConsole() {
                   handleModeChange("brief");
                   textareaRef.current?.focus();
                 }}
-                className="suggestion-pill text-xs"
+                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
               >
                 EU AI Act (Brief)
               </button>
@@ -504,7 +505,7 @@ export function ResearchConsole() {
                   handleModeChange("deep");
                   textareaRef.current?.focus();
                 }}
-                className="suggestion-pill text-xs"
+                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
               >
                 Mamba vs Transformers (Deep)
               </button>
@@ -516,10 +517,10 @@ export function ResearchConsole() {
             <div className="flex flex-wrap items-center gap-4">
               {/* Mode Selector (Just like rounds) */}
               <div className="flex items-center gap-2.5">
-                <label htmlFor="modeSelect" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                <label htmlFor="modeSelect" className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Mode:
                 </label>
-                <div className="w-[215px]">
+                <div className="w-[260px]">
                   <CustomSelect<string>
                     options={MODE_SELECT_OPTIONS}
                     value={mode}
@@ -531,10 +532,10 @@ export function ResearchConsole() {
 
               {/* Rounds Selector */}
               <div className="flex items-center gap-2.5">
-                <label htmlFor="maxRounds" className="text-xs font-medium text-muted-foreground whitespace-nowrap">
+                <label htmlFor="maxRounds" className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Rounds:
                 </label>
-                <div className="w-[175px]">
+                <div className="w-[200px]">
                   <CustomSelect<number>
                     options={ROUNDS_OPTIONS}
                     value={rounds}
