@@ -13,9 +13,18 @@ import {
   X,
   Eye,
   EyeOff,
+  ArrowRight,
+  ChevronDown,
 } from "lucide-react";
 import { marked } from "marked";
 import { CustomSelect, SelectOption } from "./ui/CustomSelect";
+
+const SCOPES = [
+  { id: "research", icon: "🔬", label: "All Web (Research)", desc: "Balanced evidence & structured citations", rounds: 3 },
+  { id: "study", icon: "🎓", label: "Study Deep (Feynman)", desc: "First-principles explanations & quiz", rounds: 2 },
+  { id: "brief", icon: "⚡", label: "Executive Brief (BLUF)", desc: "Rapid summary & action items", rounds: 1 },
+  { id: "deep", icon: "🏛️", label: "Academic Deep (Exhaustive)", desc: "Literature review & whitepapers", rounds: 4 },
+];
 
 interface ModeOption {
   id: string;
@@ -131,6 +140,8 @@ export function ResearchConsole() {
   const [modelOverride, setModelOverride] = useState("");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showKey, setShowKey] = useState(false);
+  const [showScopeDropdown, setShowScopeDropdown] = useState(false);
+  const [showRoundsDropdown, setShowRoundsDropdown] = useState(false);
 
   // Execution state
   const [loading, setLoading] = useState(false);
@@ -152,6 +163,8 @@ export function ResearchConsole() {
   const timerIntervalRef = useRef<any>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const scopeDropdownRef = useRef<HTMLDivElement>(null);
+  const roundsDropdownRef = useRef<HTMLDivElement>(null);
 
   const formatDuration = (sec: number): string => {
     if (sec < 60) return `${sec}s`;
@@ -169,6 +182,17 @@ export function ResearchConsole() {
     if (savedProvider) setProvider(savedProvider);
     if (savedBaseUrl) setBaseUrl(savedBaseUrl);
     if (savedModel) setModelOverride(savedModel);
+
+    function handleClickOutside(e: MouseEvent) {
+      if (scopeDropdownRef.current && !scopeDropdownRef.current.contains(e.target as Node)) {
+        setShowScopeDropdown(false);
+      }
+      if (roundsDropdownRef.current && !roundsDropdownRef.current.contains(e.target as Node)) {
+        setShowRoundsDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const addLog = (msg: string) => {
@@ -416,146 +440,183 @@ export function ResearchConsole() {
     }, 50);
   };
 
+  const currentScope = SCOPES.find((s) => s.id === mode) || SCOPES[0];
+
   return (
     <div className="w-full space-y-6">
       {/* ============================================================ */}
-      {/* 1. Main Query Launchpad Card (Big Chat Area + Mode/Rounds)    */}
+      {/* 1. Floating Input Card (Exact Match with Screenshot)          */}
       {/* ============================================================ */}
       {!loading && !report && (
-        <div className="console-card" id="queryCard">
-          {/* Top Bar: Inquiry Label, Settings button & Character Counter */}
-          <div className="flex items-center justify-between mb-3.5">
-            <div className="flex items-center gap-2.5">
-              <label htmlFor="queryText" className="text-xs sm:text-sm font-semibold uppercase tracking-[0.18em] text-slate-300">
-                Research Inquiry
-              </label>
-              <span className="hidden sm:inline text-xs text-muted-foreground font-normal">
-                (Press Enter to dispatch)
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="char-counter text-xs font-mono text-muted-foreground">
-                {query.length}/2000
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowSettingsModal(true)}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
-              >
-                <Settings className="size-3.5 text-indigo-400" />
-                <span>{provider ? `${provider.toUpperCase()} Settings` : "LLM Settings"}</span>
-              </button>
-            </div>
-          </div>
+        <div className="w-full space-y-3.5" id="queryCard">
+          <div className="floating-input-card">
+            {/* Top row: Textarea on left, Scope pill on top-right */}
+            <div className="input-top-row">
+              <textarea
+                id="queryText"
+                ref={textareaRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleQueryKeyDown}
+                maxLength={2000}
+                placeholder="Ask whatever you want...."
+                rows={3}
+              />
 
-          {/* Big, Spacious Chat Textarea Area with Large, Legible Typography */}
-          <div className="form-group query-area">
-            <textarea
-              id="queryText"
-              ref={textareaRef}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleQueryKeyDown}
-              maxLength={2000}
-              rows={5}
-              placeholder="What are the key technical barriers in commercial solid-state lithium-metal batteries as of 2026? Enter any research question, hypothesis, or topic..."
-              className="form-input !min-h-[190px] !p-5 sm:!p-6 !text-lg sm:!text-xl md:!text-2xl !leading-relaxed font-normal resize-y !bg-black/55 !border-white/15 focus:!border-white/40 focus:!bg-black/75 shadow-inner placeholder:!text-slate-500 placeholder:!font-light"
-            />
-
-            {/* Suggestions Chips */}
-            <div className="suggestions flex flex-wrap items-center gap-2 mt-3">
-              <span className="text-xs text-muted-foreground mr-1">Try:</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("What are the latest breakthroughs in room-temperature solid-state batteries?");
-                  handleModeChange("research");
-                  textareaRef.current?.focus();
-                }}
-                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
-              >
-                Solid-state batteries
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("Explain quantum computing and qubit superposition from first principles");
-                  handleModeChange("study");
-                  textareaRef.current?.focus();
-                }}
-                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
-              >
-                Quantum computing (Study)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("Synthesize an executive brief on EU AI Act compliance timelines and penalty caps");
-                  handleModeChange("brief");
-                  textareaRef.current?.focus();
-                }}
-                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
-              >
-                EU AI Act (Brief)
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery("State space models (Mamba) vs Transformers: architectural trade-offs");
-                  handleModeChange("deep");
-                  textareaRef.current?.focus();
-                }}
-                className="suggestion-pill text-xs sm:text-sm !py-1 !px-3"
-              >
-                Mamba vs Transformers (Deep)
-              </button>
-            </div>
-          </div>
-
-          {/* Action Row Under Textarea: Mode Selector, Rounds Selector, & Submit */}
-          <div className="action-row mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/10">
-            <div className="flex flex-wrap items-center gap-4">
-              {/* Mode Selector (Just like rounds) */}
-              <div className="flex items-center gap-2.5">
-                <label htmlFor="modeSelect" className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  Mode:
-                </label>
-                <div className="w-[260px]">
-                  <CustomSelect<string>
-                    options={MODE_SELECT_OPTIONS}
-                    value={mode}
-                    onChange={(val) => handleModeChange(val)}
-                    dropDirection="up"
+              {/* Scope / Mode Selector Pill */}
+              <div className="scope-selector-container" ref={scopeDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowScopeDropdown(!showScopeDropdown)}
+                  className="scope-pill-btn"
+                >
+                  <span>{currentScope.icon}</span>
+                  <span>{currentScope.label}</span>
+                  <ChevronDown
+                    className={`size-3.5 text-muted-foreground transition-transform ${
+                      showScopeDropdown ? "rotate-180" : ""
+                    }`}
                   />
-                </div>
-              </div>
+                </button>
 
-              {/* Rounds Selector */}
-              <div className="flex items-center gap-2.5">
-                <label htmlFor="maxRounds" className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap">
-                  Rounds:
-                </label>
-                <div className="w-[200px]">
-                  <CustomSelect<number>
-                    options={ROUNDS_OPTIONS}
-                    value={rounds}
-                    onChange={(val) => setRounds(val)}
-                    dropDirection="up"
-                  />
-                </div>
+                {showScopeDropdown && (
+                  <div className="scope-dropdown-menu">
+                    {SCOPES.map((s) => (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          setMode(s.id);
+                          setRounds(s.rounds);
+                          setShowScopeDropdown(false);
+                        }}
+                        className={`scope-item ${mode === s.id ? "active" : ""}`}
+                      >
+                        <span className="text-base">{s.icon}</span>
+                        <div>
+                          <div className="scope-item-name">{s.label}</div>
+                          <div className="scope-item-desc">{s.desc}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Launch Button */}
+            {/* Bottom Toolbar: Tools on left, Char Count + Send Arrow on right */}
+            <div className="input-bottom-bar">
+              <div className="input-actions-left">
+                {/* Rounds Selector Pill */}
+                <div className="rounds-pill-wrapper" ref={roundsDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowRoundsDropdown(!showRoundsDropdown)}
+                    className="pill-btn"
+                  >
+                    <Clock className="size-3.5 text-blue-400" />
+                    <span>{rounds} Rounds</span>
+                    <ChevronDown
+                      className={`size-3 text-muted-foreground transition-transform ${
+                        showRoundsDropdown ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {showRoundsDropdown && (
+                    <div className="rounds-dropdown-menu">
+                      {[1, 2, 3, 4, 5].map((r) => (
+                        <div
+                          key={r}
+                          onClick={() => {
+                            setRounds(r);
+                            setShowRoundsDropdown(false);
+                          }}
+                          className={`rounds-item ${rounds === r ? "active" : ""}`}
+                        >
+                          {r} {r === 1 ? "Round (Fast)" : r === 3 ? "Rounds (Balanced)" : r === 5 ? "Rounds (Max)" : "Rounds"}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Settings Pill */}
+                <button
+                  type="button"
+                  onClick={() => setShowSettingsModal(true)}
+                  className="pill-btn"
+                >
+                  <Settings className="size-3.5 text-indigo-400" />
+                  <span>{provider ? `${provider.toUpperCase()} Settings` : "LLM Settings"}</span>
+                </button>
+              </div>
+
+              <div className="input-actions-right">
+                <span className="char-counter">{query.length}/2000</span>
+                <button
+                  type="button"
+                  id="submitBtn"
+                  onClick={launchPipeline}
+                  disabled={loading || !query.trim()}
+                  className="send-arrow-btn"
+                  title="Launch Research Fleet (Enter)"
+                >
+                  <ArrowRight className="size-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Suggestions underneath card */}
+          <div className="suggestions flex flex-wrap items-center gap-2 px-1">
+            <span className="text-xs text-muted-foreground mr-1">Try:</span>
             <button
               type="button"
-              id="submitBtn"
-              onClick={launchPipeline}
-              disabled={loading}
-              className="btn-primary cursor-pointer flex items-center gap-2"
+              onClick={() => {
+                setQuery("What are the latest breakthroughs in room-temperature solid-state batteries?");
+                setMode("research");
+                setRounds(3);
+                textareaRef.current?.focus();
+              }}
+              className="suggestion-pill text-xs !py-1 !px-3"
             >
-              <span>Launch Research Fleet</span>
-              <span>→</span>
+              Solid-state batteries
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("Explain quantum computing and qubit superposition from first principles");
+                setMode("study");
+                setRounds(2);
+                textareaRef.current?.focus();
+              }}
+              className="suggestion-pill text-xs !py-1 !px-3"
+            >
+              Quantum computing (Study)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("Synthesize an executive brief on EU AI Act compliance timelines and penalty caps");
+                setMode("brief");
+                setRounds(1);
+                textareaRef.current?.focus();
+              }}
+              className="suggestion-pill text-xs !py-1 !px-3"
+            >
+              EU AI Act (Brief)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("State space models (Mamba) vs Transformers: architectural trade-offs");
+                setMode("deep");
+                setRounds(4);
+                textareaRef.current?.focus();
+              }}
+              className="suggestion-pill text-xs !py-1 !px-3"
+            >
+              Mamba vs Transformers (Deep)
             </button>
           </div>
         </div>
