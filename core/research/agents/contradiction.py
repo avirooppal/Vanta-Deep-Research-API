@@ -21,8 +21,13 @@ class ContradictionAgent(BaseAgent):
     async def run(self, state: ResearchState) -> list[Contradiction]:
         if len(state.findings) < 2:
             return []
-            
-        findings_text = "\n".join(f"URL: {f.url} | Claim: {f.facts}" for f in state.findings)
+
+        # Only inspect the most recent 8 findings to avoid unbounded token growth
+        recent = state.findings[-8:]
+        findings_text = "\n".join(
+            f"URL: {f.url} | Claim: {(f.summary or f.facts or '')[:120]}"
+            for f in recent
+        )
         prompt = f"Findings:\n{findings_text}"
         
         messages = [
@@ -31,7 +36,7 @@ class ContradictionAgent(BaseAgent):
         ]
         
         try:
-            response = await self.llm.complete(messages)
+            response = await self.llm.complete(messages, complexity="low")
             content = response.content.strip()
             if content.startswith("```json"):
                 content = content[7:-3]

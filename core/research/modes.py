@@ -186,3 +186,19 @@ def list_available_modes() -> list[dict]:
         }
         for cfg in MODE_REGISTRY.values()
     ]
+
+
+# ---------------------------------------------------------------------------
+# Category-aware format overrides (Odysseus-inspired)
+# Applied orthogonally to modes during final report generation.
+# ---------------------------------------------------------------------------
+
+VALID_CATEGORIES = {"product", "comparison", "howto", "factcheck"}
+
+CATEGORY_CLASSIFICATION_PROMPT = (
+    "Classify this research question into exactly ONE category.\n"
+    "Categories: product, comparison, howto, factcheck\n"
+    "If none fit well, respond with: general\n\n"
+    "Question: {question}\n\n"
+    "Respond with ONLY the category name, nothing else."
+)

@@ -1,9 +1,52 @@
 use_default_settings: true
+
 server:
-  secret_key: "changeme"
+  # Generate a real secret: python -c "import secrets; print(secrets.token_hex(32))"
+  secret_key: "${SEARXNG_SECRET_KEY:-changeme-replace-in-production}"
   limiter: false
+  image_proxy: false
+  http_protocol_version: "1.1"
+  method: "GET"
+
 search:
   safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
   formats:
     - html
-    - json
+    - json     # required by the Vanta research API
+
+engines:
+  # Keep a broad mix for best coverage while staying free
+  - name: google
+    engine: google
+    shortcut: g
+
+  - name: bing
+    engine: bing
+    shortcut: bi
+
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    timeout: 3.0
+
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+    timeout: 5.0
+
+  - name: github
+    engine: github
+    shortcut: gh
+    timeout: 5.0
+
+outgoing:
+  request_timeout: 10.0
+  useragent_suffix: ""
+  pool_connections: 100
+  pool_maxsize: 20

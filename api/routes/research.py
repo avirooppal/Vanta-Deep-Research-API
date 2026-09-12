@@ -125,11 +125,18 @@ async def get_research_job(job_id: str, request: Request):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
 
+    duration_seconds = 0
+    if job.finished_at and job.started_at:
+        duration_seconds = max(0, int((job.finished_at - job.started_at).total_seconds()))
+    elif job.started_at:
+        duration_seconds = max(0, int((datetime.now(timezone.utc) - job.started_at).total_seconds()))
+
     response_data = {
         "id": job.id,
         "status": job.status,
         "query": job.query,
         "mode": getattr(job, "mode", None) or "research",
+        "duration_seconds": duration_seconds,
         "created_at": job.created_at.isoformat(),
         "started_at": job.started_at.isoformat() if job.started_at else None,
         "finished_at": job.finished_at.isoformat() if job.finished_at else None,
@@ -160,6 +167,18 @@ async def get_research_job(job_id: str, request: Request):
         async with get_db_session() as db:
             result = await db.execute(select(Report).where(Report.job_id == job_id))
             report = result.scalar_one_or_none()
+
+            from db.models.usage_record import UsageRecord
+            usage_res = await db.execute(select(UsageRecord).where(UsageRecord.job_id == job_id))
+            usage = usage_res.scalar_one_or_none()
+            if usage:
+                response_data["usage"] = {
+                    "tokens_in": usage.tokens_in,
+                    "tokens_out": usage.tokens_out,
+                    "sources_fetched": usage.sources_fetched,
+                    "search_queries_issued": usage.search_queries_issued,
+                    "duration_seconds": usage.duration_seconds,
+                }
 
         if report:
             content_json = json.loads(report.content_json) if report.content_json else {}

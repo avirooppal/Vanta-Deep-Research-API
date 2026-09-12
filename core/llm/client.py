@@ -22,7 +22,7 @@ class LLMClient:
             concurrency_limit = min(concurrency_limit, 2)
         self._semaphore = asyncio.Semaphore(concurrency_limit)
 
-    async def complete(self, messages: list[Message], complexity: str = "high") -> LLMResponse:
+    async def complete(self, messages: list[Message], complexity: str = "high", timeout: int | None = None) -> LLMResponse:
         cfg = self.low_complexity_config if complexity == "low" and self.low_complexity_config else self.config
         provider = cfg.provider
 
@@ -34,11 +34,26 @@ class LLMClient:
                 self.cache_hits += 1
                 return self.cache[cache_key]
 
+        OPENAI_COMPAT_PROVIDERS = (
+            "openai",
+            "openai_compatible",
+            "azure_openai",
+            "openrouter",
+            "ollama",
+            "ollama_cloud",
+            "groq",
+            "deepseek",
+            "mistral",
+            "together",
+            "xai",
+            "cerebras",
+        )
+
         async with self._semaphore:
-            if provider in ("openai", "openai_compatible", "azure_openai", "openrouter", "ollama"):
-                res = await call_openai(messages, cfg)
+            if provider in OPENAI_COMPAT_PROVIDERS:
+                res = await call_openai(messages, cfg, timeout=timeout)
             elif provider == "anthropic":
-                res = await call_anthropic(messages, cfg)
+                res = await call_anthropic(messages, cfg, timeout=timeout)
             else:
                 raise ValueError(f"Unsupported provider: {provider}")
 

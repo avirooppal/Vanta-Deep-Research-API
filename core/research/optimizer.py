@@ -1,9 +1,13 @@
 import re
+from datetime import datetime
 from urllib.parse import urlparse
 from typing import Optional
 
 
-# High-trust authoritative domains and suffixes
+# ---------------------------------------------------------------------------
+# Authoritative / suspicious domain heuristics
+# ---------------------------------------------------------------------------
+
 AUTHORITATIVE_DOMAINS = {
     "arxiv.org",
     "nature.com",
@@ -22,11 +26,8 @@ AUTHORITATIVE_DOMAINS = {
 }
 
 AUTHORITATIVE_TLDS = {".edu", ".gov", ".mil", ".ac.uk", ".edu.au"}
-
-# Suspicious / spam TLDs
 SUSPICIOUS_TLDS = {".click", ".top", ".buzz", ".rest", ".gq", ".cf", ".tk", ".work", ".fit"}
 
-# Boilerplate patterns to drop
 BOILERPLATE_REGEX = re.compile(
     r"(accept cookies|cookie policy|privacy policy|terms of service|all rights reserved|sign up for our newsletter|subscribe now|advertisement|share on (twitter|facebook|linkedin))",
     re.IGNORECASE,
@@ -47,17 +48,14 @@ def heuristic_validate_domain(url: str) -> Optional[tuple[int, str]]:
         if not hostname:
             return (20, "Invalid URL hostname")
 
-        # Check authoritative exact domains
         for domain in AUTHORITATIVE_DOMAINS:
             if hostname == domain or hostname.endswith("." + domain):
                 return (90, "Authoritative Domain (heuristic)")
 
-        # Check authoritative TLDs
         for tld in AUTHORITATIVE_TLDS:
             if hostname.endswith(tld):
                 return (90, f"Authoritative TLD {tld} (heuristic)")
 
-        # Check suspicious TLDs
         for tld in SUSPICIOUS_TLDS:
             if hostname.endswith(tld):
                 return (15, f"Low-Quality / Suspicious TLD {tld} (heuristic)")
@@ -68,73 +66,74 @@ def heuristic_validate_domain(url: str) -> Optional[tuple[int, str]]:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Content compression
+# ---------------------------------------------------------------------------
+
 def compress_source_text(text: str, query: str = "", max_chars: int = 3500) -> str:
     """
     Extract high-density, query-relevant content from scraped web text.
-    Removes boilerplate, duplicate whitespace, and ranks paragraphs by relevance to query.
+    Removes boilerplate, duplicate whitespace, and ranks paragraphs by relevance.
     """
     if not text:
         return ""
 
-    # Normalize excessive whitespace and empty lines properly
     cleaned = re.sub(r"\r\n|\r", "\n", text)
     cleaned = re.sub(r"[ \t]*\n[ \t]*", "\n", cleaned)
     cleaned = re.sub(r"\n{2,}", "\n\n", cleaned).strip()
     cleaned = re.sub(r"[ \t]+", " ", cleaned)
 
     if len(cleaned) <= max_chars:
-        # Check if entire text is small, but still filter out boilerplate paragraphs
         raw_paragraphs = [p.strip() for p in cleaned.split("\n\n") if len(p.strip()) > 30]
         filtered = [p for p in raw_paragraphs if not BOILERPLATE_REGEX.search(p)]
         if filtered:
-            return "\n\n".join(filtered)[:max_chars]
+            res = "\n\n".join(filtered)
+            if len(res) > max_chars:
+                truncated = res[:max_chars]
+                last_para = truncated.rfind("\n\n")
+                return truncated[:last_para] if last_para > max_chars * 0.8 else truncated
+            return res
         return cleaned
 
-    # Split into paragraphs
     raw_paragraphs = [p.strip() for p in cleaned.split("\n\n") if len(p.strip()) > 30]
-
-    # Filter out obvious boilerplate paragraphs
     filtered_paragraphs = [p for p in raw_paragraphs if not BOILERPLATE_REGEX.search(p)]
     if not filtered_paragraphs:
         filtered_paragraphs = raw_paragraphs
 
-    # Tokenize query words for scoring
     query_words = set(re.findall(r"\w{3,}", query.lower())) if query else set()
 
     scored_paragraphs = []
     for idx, p in enumerate(filtered_paragraphs):
         p_lower = p.lower()
-        # Score based on query term frequency and structural value
         score = 0
         if query_words:
             matched_words = sum(1 for w in query_words if w in p_lower)
             score += matched_words * 3
-
-        # Prefer earlier paragraphs (lead summary paragraphs) slightly
         score += max(0, 5 - idx)
-
         scored_paragraphs.append((score, idx, p))
 
-    # Sort by score descending to pick the best paragraphs
     scored_paragraphs.sort(key=lambda x: x[0], reverse=True)
 
     selected_indices = set()
     total_len = 0
-
     for _, idx, p in scored_paragraphs:
         if total_len + len(p) + 2 > max_chars:
             continue
         selected_indices.add(idx)
         total_len += len(p) + 2
 
-    # If no paragraphs fit, fallback to direct truncated slice
     if not selected_indices:
-        return cleaned[:max_chars]
+        truncated = cleaned[:max_chars]
+        last_para = truncated.rfind("\n\n")
+        return truncated[:last_para] if last_para > max_chars * 0.8 else truncated
 
-    # Re-order selected paragraphs back to original flow
     ordered_paragraphs = [filtered_paragraphs[i] for i in sorted(selected_indices)]
     return "\n\n".join(ordered_paragraphs)
 
+
+# ---------------------------------------------------------------------------
+# Deduplication
+# ---------------------------------------------------------------------------
 
 def _jaccard_similarity(set_a: set[str], set_b: set[str]) -> float:
     if not set_a or not set_b:
@@ -157,7 +156,10 @@ def deduplicate_findings(findings: list, similarity_threshold: float = 0.70) -> 
 
     for f in findings:
         fact_text = f.facts if isinstance(f.facts, str) else str(f.facts)
-        words = set(re.findall(r"\w{3,}", fact_text.lower()))
+        # Also include summary if present for better dedup
+        summary_text = getattr(f, "summary", "") or ""
+        combined = fact_text + " " + summary_text
+        words = set(re.findall(r"\w{3,}", combined.lower()))
 
         if not words:
             continue
@@ -179,3 +181,70 @@ def compact_system_prompt(prompt: str) -> str:
     """Compact prompt text by removing unnecessary multi-line whitespace and filler."""
     lines = [line.strip() for line in prompt.strip().splitlines() if line.strip()]
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Quality filtering (Odysseus-inspired)
+# ---------------------------------------------------------------------------
+
+LOW_QUALITY_MARKERS = [
+    "insufficient to",
+    "content is insufficient",
+    "no substantive data",
+    "does not contain",
+    "not relevant to",
+    "no relevant information",
+    "unable to extract",
+    "completely unrelated",
+    "boilerplate",
+    "footer text",
+    "cookie consent",
+    "cookie banner",
+    "cookie notice",
+    "copyright notice",
+    "copyright footer",
+    "all rights reserved",
+]
+
+
+def is_low_quality(summary: str) -> bool:
+    """Check if a finding summary indicates useless or irrelevant content."""
+    try:
+        if not isinstance(summary, str) or not summary:
+            return True
+        low = summary.lower()
+        return any(marker in low for marker in LOW_QUALITY_MARKERS)
+    except Exception:
+        return False  # fail open
+
+
+# ---------------------------------------------------------------------------
+# Reasoning model cleanup (Odysseus-inspired)
+# ---------------------------------------------------------------------------
+
+_THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+
+def strip_thinking(text: Optional[str]) -> Optional[str]:
+    """Strip <think>...</think> reasoning blocks from LLM output."""
+    if text is None:
+        return None
+    return _THINK_RE.sub("", text).strip()
+
+
+# ---------------------------------------------------------------------------
+# Date grounding
+# ---------------------------------------------------------------------------
+
+def current_date_context() -> str:
+    """
+    Preamble that grounds query-generation LLMs in the real current date.
+    Prevents models from emitting stale year references in search queries.
+    """
+    now = datetime.now().astimezone()
+    return (
+        f"Today's date is {now.strftime('%B %d, %Y')} ({now.strftime('%Y-%m-%d')}). "
+        f"When a search query needs a year or refers to 'latest'/'current'/"
+        f"'this year', use {now.strftime('%Y')} or relative wording — never a "
+        f"year inferred from training data.\n\n"
+    )

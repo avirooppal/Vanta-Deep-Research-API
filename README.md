@@ -734,12 +734,29 @@ All authenticated endpoints require:
 Authorization: Bearer <your-llm-api-key>
 ```
 
-The provider is auto-detected from the key prefix. Override with headers:
+The provider and default model are auto-detected from the key prefix:
 
-```
-X-Provider: openai_compatible
-X-Base-Url: http://localhost:11434/v1
-X-Model: llama3.1:70b
+| Provider | Key Prefix | Default Model | Base URL |
+|---|---|---|---|
+| **OpenAI** | `sk-...` | `gpt-4o` | `https://api.openai.com/v1` |
+| **Anthropic** | `sk-ant-...` | `claude-3-5-sonnet-latest` | `https://api.anthropic.com/v1` |
+| **OpenRouter** | `sk-or-...` | `openrouter/free` | `https://openrouter.ai/api/v1` |
+| **Groq** | `gsk_...` | `llama-3.3-70b-versatile` | `https://api.groq.com/openai/v1` |
+| **Google Gemini** | `AIza...` | `gemini-2.0-flash` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| **xAI** | `xai-...` | `grok-2-latest` | `https://api.x.ai/v1` |
+| **Cerebras** | `csk-...` | `llama3.3-70b` | `https://api.cerebras.ai/v1` |
+| **Ollama Cloud** | Any (with `X-Provider: ollama_cloud`) | `llama3.3` | `https://api.ollama.com/v1` |
+| **DeepSeek** | Any (with `X-Provider: deepseek`) | `deepseek-chat` | `https://api.deepseek.com/v1` |
+| **Mistral** | Any (with `X-Provider: mistral`) | `mistral-large-latest` | `https://api.mistral.ai/v1` |
+| **Together AI** | Any (with `X-Provider: together`) | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `https://api.together.xyz/v1` |
+| **Local Ollama** | Any | `llama3.2` | `http://localhost:11434/v1` |
+
+Override provider, base URL, or model on any request with optional headers:
+
+```http
+X-Provider: ollama_cloud
+X-Base-Url: https://api.ollama.com/v1
+X-Model: llama3.3
 ```
 
 ### Endpoints
@@ -1053,19 +1070,26 @@ git clone https://github.com/avirooppal/Vanta-Deep-Research-API
 cd Vanta-Deep-Research-API
 
 # 2. Configure environment
-cp deploy/.env.example deploy/.env
-# Edit deploy/.env — set SECRET_KEY to a unique random string
+cp .env.example .env
+# Edit .env — set SECRET_KEY to a unique random string (32+ characters)
+# (Optional: set default OPENAI_API_KEY, ANTHROPIC_API_KEY, etc., or pass keys per-request via Bearer header)
 
 # 3. Build and start all services
 #    Services: api, worker, postgres (pgvector), redis, searxng, caddy
-cd deploy
-docker compose up -d --build
+docker compose -f deploy/docker-compose.yml up -d --build
 
-# 4. Tail logs to confirm startup
-docker compose logs -f api worker
+# 4. Check service health & logs
+docker compose -f deploy/docker-compose.yml ps
+docker compose -f deploy/docker-compose.yml logs -f api worker
+
+# 5. (Optional) For local development with live code hot-reload:
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml up -d
+
+# 6. Stop all services:
+docker compose -f deploy/docker-compose.yml down
 ```
 
-The API will be available at `http://localhost:8000`. The built-in debug console is at `http://localhost:8000/`.
+The API will be available at `http://localhost:8000`. The built-in interactive console is at `http://localhost:8000/`.
 
 ---
 

@@ -37,7 +37,7 @@ class ValidatorAgent(BaseAgent):
             })
             return source
 
-        prompt = f"URL: {page.url}\nTitle: {page.title}\nSnippet: {page.text[:800]}"
+        prompt = f"URL: {page.url}\nTitle: {page.title}\nSnippet: {page.text[:300]}"  # was 800
         messages = [
             LLMMessage(role="system", content=VALIDATOR_PROMPT),
             LLMMessage(role="user", content=prompt)
@@ -47,7 +47,7 @@ class ValidatorAgent(BaseAgent):
         flags = "None"
         
         try:
-            response = await self.llm.complete(messages)
+            response = await self.llm.complete(messages, complexity="low")
             content = response.content.strip()
             if content.startswith("```json"):
                 content = content[7:-3]

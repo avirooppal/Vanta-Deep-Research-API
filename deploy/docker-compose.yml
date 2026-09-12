@@ -1,18 +1,42 @@
+# Vanta Deep Research — production Docker Compose
+# Usage:  docker compose -f deploy/docker-compose.yml up -d --build
+#
+# For local dev override (hot-reload, exposed ports, etc.), also apply:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml up
+
 x-api-env: &api-env
   DATABASE_URL: postgresql+asyncpg://postgres:${PG_PASSWORD:-devpassword}@postgres:5432/drapi
   REDIS_URL: redis://:${REDIS_PASSWORD:-devredispass}@redis:6379/0
-  SECRET_KEY: ${SECRET_KEY:-changeme-dev-secret-32chars-min}
+  SECRET_KEY: ${SECRET_KEY:-changeme-dev-secret-32chars-min!!}
   SEARXNG_URL: http://searxng:8080
-  ENVIRONMENT: production
+  ENVIRONMENT: ${ENVIRONMENT:-production}
+  # ── LLM Provider (at least one required) ──────────────────────────────────
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-3-haiku-20240307}
+  # ── Optional local/Ollama LLM endpoint ────────────────────────────────────
+  LOCAL_LLM_URL: ${LOCAL_LLM_URL:-}
+  LOCAL_LLM_MODEL: ${LOCAL_LLM_MODEL:-}
+  # ── Tuning ────────────────────────────────────────────────────────────────
+  MAX_RESEARCH_ROUNDS: ${MAX_RESEARCH_ROUNDS:-3}
+  EXTRACTION_CONCURRENCY: ${EXTRACTION_CONCURRENCY:-3}
+
+x-build: &build
+  context: ..
+  dockerfile: deploy/Dockerfile
+
+x-restart: &restart
+  restart: unless-stopped
 
 services:
+  # ── API server ─────────────────────────────────────────────────────────────
   api:
-    image: deep-research-api:latest
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+    <<: *restart
+    image: ${COMPOSE_PROJECT_NAME:-drapi}:latest
+    build: *build
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8000}:8000"
     environment:
       <<: *api-env
     depends_on:
@@ -20,13 +44,25 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: unless-stopped
+      searxng:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+  # ── Background worker (arq) ────────────────────────────────────────────────
   worker:
-    image: deep-research-api:latest
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile
+    <<: *restart
+    image: ${COMPOSE_PROJECT_NAME:-drapi}:latest
+    build: *build
     command: python -m arq core.queue.worker.WorkerSettings
     environment:
       <<: *api-env
@@ -35,62 +71,108 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
 
+  # ── PostgreSQL + pgvector ──────────────────────────────────────────────────
   postgres:
+    <<: *restart
     image: pgvector/pgvector:pg16
     ports:
-      - "5434:5432"
+      - "${PG_PORT:-5434}:5432"
     environment:
       POSTGRES_DB: drapi
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: devpassword
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_PASSWORD: ${PG_PASSWORD:-devpassword}
     volumes:
-      - pgdata2:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d drapi"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ── Redis ──────────────────────────────────────────────────────────────────
   redis:
+    <<: *restart
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redisdata:/data
-    command: redis-server --requirepass ${REDIS_PASSWORD:-devredispass} --appendonly yes
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-devredispass}
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-devredispass}", "ping"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ── SearXNG (free self-hosted search) ─────────────────────────────────────
   searxng:
+    <<: *restart
     image: searxng/searxng:latest
     volumes:
       - ./searxng:/etc/searxng:rw
     environment:
-      - SEARXNG_BASE_URL=http://localhost:8085/
+      SEARXNG_BASE_URL: http://localhost:${SEARXNG_PORT:-8085}/
     ports:
-      - "8085:8080"
+      - "${SEARXNG_PORT:-8085}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
+  # ── Caddy (TLS reverse proxy) ──────────────────────────────────────────────
   caddy:
+    <<: *restart
     image: caddy:2-alpine
-    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"   # HTTP/3
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
     depends_on:
       - api
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
-  pgdata2:
+  pgdata:
   redisdata:
   caddy_data:
   caddy_config:

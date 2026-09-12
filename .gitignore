@@ -24,3 +24,6 @@ tasks.md
 # Graphify cache & backups
 graphify-out/cache/
 graphify-out/202*
+
+# Reference repositories
+.agents/odysseus-ref/

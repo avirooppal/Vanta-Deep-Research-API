@@ -17,9 +17,12 @@ from api.routes.research import router as research_router
 from api.routes.reports import router as reports_router
 from api.routes.sources import router as sources_router
 from api.routes.webhooks import router as webhooks_router
+from core.llm.http import close_http_client
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    await close_http_client()
     await engine.dispose()
 async def request_id_middleware(request: Request, call_next):
     req_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))

@@ -133,6 +133,7 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             cancelled=cancel_event,
             job_id=job_id,
             mode=job_mode,
+            synthesis_window=10,
         )
 
         async with get_db_session() as db:
@@ -149,6 +150,8 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             job_row.status = "completed"
             job_row.progress_pct = 100
             job_row.finished_at = datetime.now(timezone.utc)
+            if not report_output.citations and "No findings" in (report_output.summary or ""):
+                job_row.error = "No findings gathered. Search returned dry or model was rate-limited."
 
             duration = int((job_row.finished_at - job_row.started_at).total_seconds()) if job_row.started_at else 0
             usage = UsageRecord(

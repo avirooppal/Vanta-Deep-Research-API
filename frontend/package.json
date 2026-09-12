@@ -9,17 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "vite": "latest",
-    "typescript": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "tailwindcss": "latest",
     "@tailwindcss/vite": "latest",
+    "@vitejs/plugin-react": "latest",
     "class-variance-authority": "latest",
     "clsx": "latest",
+    "lucide-react": "latest",
+    "marked": "^18.0.12",
+    "react": "latest",
+    "react-dom": "latest",
     "tailwind-merge": "latest",
-    "lucide-react": "latest"
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest"
   },
   "devDependencies": {
     "@types/react": "latest",

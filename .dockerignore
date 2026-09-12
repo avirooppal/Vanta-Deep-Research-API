@@ -1,6 +1,51 @@
-.venv/
-.pytest_cache/
+# Python
 __pycache__/
 *.pyc
-.git/
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+
+# Venvs
+.venv/
+venv/
+env/
+
+# Tests / CI
+.pytest_cache/
 tests/.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Dev tooling
+.git/
+.github/
+.agents/
+graphify-out/
+*.log
+
+# Frontend build artifacts (if any)
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / local config
+.env
+*.env.local
+
+# Alembic runtime cache
+db/migrations/__pycache__/

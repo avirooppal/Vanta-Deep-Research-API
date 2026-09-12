@@ -1,0 +1,33 @@
+# Local development overrides
+# Apply with:
+#   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml up
+#
+# Hot-reload, verbose logging, no Caddy, direct port access.
+
+services:
+  api:
+    command: uvicorn api.app:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      # Mount source so code changes hot-reload without rebuild
+      - ../:/app:cached
+    environment:
+      ENVIRONMENT: development
+    # Disable healthcheck delay in dev
+    healthcheck:
+      start_period: 5s
+
+  worker:
+    command: python -m arq core.queue.worker.WorkerSettings
+    volumes:
+      - ../:/app:cached
+    environment:
+      ENVIRONMENT: development
+
+  # Expose postgres directly in dev
+  postgres:
+    ports:
+      - "5434:5432"
+
+  # Skip Caddy in local dev — hit API directly on :8000
+  caddy:
+    profiles: ["prod"]   # only starts when --profile prod is passed

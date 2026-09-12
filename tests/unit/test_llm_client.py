@@ -63,6 +63,32 @@ async def test_routes_to_openrouter():
 
 
 @pytest.mark.asyncio
+async def test_routes_to_extended_providers():
+    mock_response = {
+        "choices": [{"message": {"content": "extended provider mocked"}}],
+        "model": "llama-3.3-70b-versatile",
+        "usage": {"prompt_tokens": 10, "completion_tokens": 5},
+    }
+    for prov, base in [
+        ("groq", "https://api.groq.com/openai/v1"),
+        ("deepseek", "https://api.deepseek.com/v1"),
+        ("ollama", "http://localhost:11434/v1"),
+        ("ollama_cloud", "https://api.ollama.com/v1"),
+        ("xai", "https://api.x.ai/v1"),
+    ]:
+        with patch("core.llm.providers.openai.httpx.AsyncClient") as mock_cls:
+            mock_cls.return_value = _make_mock_client(mock_response)
+            config = LLMConfig(
+                provider=prov,
+                base_url=base,
+                api_key="test-key",
+                model="test-model",
+            )
+            result = await LLMClient(config).complete([Message(role="user", content="hi")])
+            assert result.content == "extended provider mocked"
+
+
+@pytest.mark.asyncio
 async def test_raises_on_unknown_provider():
     config = LLMConfig(provider="unknown_provider", base_url="http://x", api_key=None, model="m")
     with pytest.raises(ValueError, match="Unsupported provider"):

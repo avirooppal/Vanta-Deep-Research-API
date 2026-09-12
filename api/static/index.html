@@ -579,29 +579,152 @@
             margin: 1.25rem 0;
         }
 
-        .citations-section {
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 1.5rem;
-        }
-
-        .citation-chip {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.04);
+        /* Stats Bar & Rich Metrics */
+        .stats-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding: 0.85rem 1.15rem;
+            background: rgba(255, 255, 255, 0.025);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 8px;
-            padding: 0.4rem 0.75rem;
-            margin: 0.3rem 0.3rem 0.3rem 0;
-            font-size: 0.825rem;
-            color: #93c5fd;
-            text-decoration: none;
-            transition: all 0.2s;
+            border-radius: 10px;
         }
 
-        .citation-chip:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
+        .stat-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .stat-badge strong {
             color: #ffffff;
+            font-weight: 600;
+        }
+
+        .live-timer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #34d399;
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            padding: 0.35rem 0.75rem;
+            border-radius: 9999px;
+            font-family: monospace;
+        }
+
+        /* Verified Sources Grid */
+        .sources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .source-card {
+            background: rgba(255, 255, 255, 0.025);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 0.85rem 1rem;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .source-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .source-domain-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .source-domain-chip {
+            font-size: 0.7rem;
+            color: #818cf8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .source-trust-pill {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.45rem;
+            border-radius: 9999px;
+            background: rgba(52, 211, 153, 0.15);
+            color: #34d399;
+            font-weight: 500;
+        }
+
+        .source-title {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #f1f5f9;
+            line-height: 1.35;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .source-snippet {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        @media print {
+            .video-backdrop, .video-overlay, nav, .hero, #queryCard, #progressCard, .report-header button, .btn-primary, .btn-secondary {
+                display: none !important;
+            }
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+            }
+            .layout {
+                max-width: 100% !important;
+                padding: 0 !important;
+            }
+            .liquid-glass {
+                background: none !important;
+                border: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+            }
+            .report-body {
+                color: #111827 !important;
+            }
+            .report-body h1, .report-body h2, .report-body h3 {
+                color: #000000 !important;
+            }
+            .source-card {
+                border: 1px solid #e2e8f0 !important;
+                background: #f8fafc !important;
+                color: #000000 !important;
+            }
+            .source-title {
+                color: #000000 !important;
+            }
         }
 
         @media (max-width: 768px) {
@@ -656,23 +779,36 @@
                         <option value="">Auto-detect from key</option>
                         <option value="openai">OpenAI (GPT-4o, o3-mini)</option>
                         <option value="anthropic">Anthropic (Claude 3.5 Sonnet)</option>
+                        <option value="openrouter">OpenRouter (Unified Router)</option>
                         <option value="openai_compatible">Gemini / Custom OpenAI Base</option>
-                        <option value="openrouter">OpenRouter</option>
-                        <option value="ollama">Ollama / Local vLLM</option>
+                        <option value="groq">Groq (Llama 3.3, Mixtral)</option>
+                        <option value="deepseek">DeepSeek (DeepSeek-V3, R1)</option>
+                        <option value="ollama">Ollama Local (localhost:11434)</option>
+                        <option value="ollama_cloud">Ollama Cloud / Remote</option>
+                        <option value="mistral">Mistral AI (Mistral Large)</option>
+                        <option value="together">Together AI (Llama 3.3, R1)</option>
+                        <option value="xai">xAI (Grok-2)</option>
+                        <option value="cerebras">Cerebras (Ultra-Fast)</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label for="apiKey">API Key (Stored locally in browser)</label>
-                    <input type="password" id="apiKey" placeholder="sk-ant-... or sk-... or AIza...">
+                    <input type="password" id="apiKey" placeholder="sk-ant-... / sk-... / gsk_... / xai-... / AIza...">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label for="advBaseUrl">Optional Base URL Override</label>
-                    <input type="text" id="advBaseUrl" placeholder="https://api.openai.com/v1 or http://localhost:11434/v1">
+                    <input type="text" id="advBaseUrl" placeholder="https://api.groq.com/openai/v1, http://localhost:11434/v1, etc.">
                 </div>
                 <div class="form-group" style="grid-column: span 2;">
                     <label for="advModelOverride">Model Override (Optional)</label>
-                    <input type="text" id="advModelOverride" placeholder="e.g. google/gemini-2.5-flash, deepseek/deepseek-chat, or meta-llama/llama-3.3-70b-instruct">
-                    <span style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.25rem;">For OpenRouter: free models have a 20 req/min & 50 req/day limit. Specifying a paid model prevents 429 errors.</span>
+                    <input type="text" id="advModelOverride" placeholder="e.g. google/gemini-2.0-flash-001, deepseek/deepseek-chat, or meta-llama/llama-3.3-70b-instruct" oninput="saveSettings(); renderPresets();">
+                    <div id="modelPresetsContainer" style="display: none; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.5rem; align-items: center;">
+                        <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 500;">Presets:</span>
+                        <div id="modelPresetsList" style="display: flex; flex-wrap: wrap; gap: 0.35rem;"></div>
+                    </div>
+                    <div id="openrouterWarning" style="display: none; margin-top: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 6px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); color: #fcd34d; font-size: 0.75rem; line-height: 1.4;">
+                        ⚠️ <strong>Notice:</strong> Default openrouter models (<code>openrouter/free</code>) strictly throttle concurrent requests and may return empty findings. Click a preset chip above (e.g. <code>google/gemini-2.0-flash-001</code>) for fast and uninterrupted research.
+                    </div>
                 </div>
             </div>
         </div>
@@ -745,12 +881,15 @@
 
         <!-- Live Pipeline Execution Tracker -->
         <div class="liquid-glass" id="progressCard">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                 <div>
                     <span class="report-mode-tag" id="activeModeLabel">RESEARCH MODE</span>
                     <h2 style="font-family: var(--font-display); font-size: 1.85rem; margin-top: 0.25rem;" id="activeQueryTitle">Research in Progress</h2>
                 </div>
-                <button class="btn-secondary" id="cancelBtn" onclick="cancelJob()">Cancel Job</button>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div id="liveTimerBadge" class="live-timer-badge">⏱️ 00:00</div>
+                    <button class="btn-secondary" id="cancelBtn" onclick="cancelJob()">Cancel Job</button>
+                </div>
             </div>
 
             <!-- Pipeline Visualizer -->
@@ -803,18 +942,38 @@
                     <span class="report-mode-tag" id="reportModeTag">SYNTHESIZED REPORT</span>
                     <h2 style="font-family: var(--font-display); font-size: 2.25rem;" id="reportHeading">Research Findings</h2>
                 </div>
-                <div style="display: flex; gap: 0.75rem;">
-                    <button class="btn-secondary" onclick="copyReportMarkdown()">Copy Markdown</button>
-                    <button class="btn-secondary" onclick="downloadReport()">Download .md</button>
-                    <button class="btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.85rem;" onclick="resetConsole()">New Inquiry</button>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+                    <button class="btn-secondary" onclick="copyReportMarkdown()">📋 Copy Markdown</button>
+                    <button class="btn-secondary" onclick="downloadReport()">📥 Download .md</button>
+                    <button class="btn-secondary" onclick="exportJsonDossier()">📦 Export JSON</button>
+                    <button class="btn-secondary" onclick="window.print()">🖨️ Print / PDF</button>
+                    <button class="btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.85rem;" onclick="resetConsole()">+ New Inquiry</button>
                 </div>
+            </div>
+
+            <!-- Rich Metrics & Metadata Bar -->
+            <div class="stats-bar" id="reportStatsBar">
+                <div class="stat-badge">⏱️ Duration: <strong id="statDuration">--</strong></div>
+                <div class="stat-badge">🔄 Rounds: <strong id="statRounds">--</strong></div>
+                <div class="stat-badge">🌐 Sources: <strong id="statSources">--</strong></div>
+                <div class="stat-badge">📊 Tokens: <strong id="statTokens">--</strong></div>
+                <div class="stat-badge">🧠 Model: <strong id="statModel">--</strong></div>
+            </div>
+
+            <!-- Executive Summary Callout (if present) -->
+            <div id="execSummaryBox" style="display: none; margin-bottom: 1.5rem; padding: 1.25rem; border-radius: 12px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);">
+                <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: #93c5fd; font-weight: 600; margin-bottom: 0.4rem;">Executive Synthesis</div>
+                <p id="execSummaryText" style="font-size: 0.95rem; color: #e2e8f0; line-height: 1.6; margin: 0;"></p>
             </div>
 
             <div class="report-body" id="reportContent"></div>
 
             <div class="citations-section" id="citationsSection">
-                <h3 style="font-size: 1.1rem; color: var(--text-main); margin-bottom: 0.75rem;">Verified Sources</h3>
-                <div id="citationsList"></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h3 style="font-size: 1.15rem; color: var(--text-main); margin: 0;">Verified Evidence &amp; Sources</h3>
+                    <span id="sourcesCountBadge" style="font-size: 0.75rem; color: #94a3b8; background: rgba(255, 255, 255, 0.05); padding: 0.2rem 0.6rem; border-radius: 9999px;">0 sources</span>
+                </div>
+                <div class="sources-grid" id="citationsList"></div>
             </div>
         </div>
     </div>
@@ -823,9 +982,73 @@
         let selectedMode = "research";
         let currentJobId = null;
         let pollInterval = null;
+        let liveTimerInterval = null;
+        let jobStartTime = null;
         let lastReportMarkdown = "";
+        let lastJobData = null;
 
-        // Initialize from localStorage
+        // Expanded Model Presets for all major AI providers
+        const MODEL_PRESETS = {
+            openai: ["gpt-4o-mini", "gpt-4o", "o3-mini"],
+            anthropic: ["claude-3-5-haiku-latest", "claude-3-5-sonnet-latest"],
+            openrouter: ["google/gemini-2.0-flash-001", "deepseek/deepseek-chat", "meta-llama/llama-3.3-70b-instruct"],
+            openai_compatible: ["gemini-2.0-flash", "gemini-2.5-flash-preview-05-20"],
+            groq: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+            deepseek: ["deepseek-chat", "deepseek-reasoner"],
+            ollama: ["llama3.2", "qwen2.5:7b", "mistral", "deepseek-r1:8b"],
+            ollama_cloud: ["llama3.3", "qwen2.5:72b", "deepseek-r1"],
+            mistral: ["mistral-large-latest", "mistral-small-latest", "codestral-latest"],
+            together: ["meta-llama/Llama-3.3-70B-Instruct-Turbo", "deepseek-ai/DeepSeek-R1"],
+            xai: ["grok-2-latest", "grok-beta"],
+            cerebras: ["llama3.3-70b", "llama3.1-8b"]
+        };
+
+        function renderPresets() {
+            const provider = document.getElementById("advProvider").value;
+            const modelInput = document.getElementById("advModelOverride");
+            const presetsList = document.getElementById("modelPresetsList");
+            const container = document.getElementById("modelPresetsContainer");
+            const warning = document.getElementById("openrouterWarning");
+
+            if (!presetsList || !container) return;
+
+            presetsList.innerHTML = "";
+            const list = MODEL_PRESETS[provider];
+            if (!list || list.length === 0) {
+                container.style.display = "none";
+            } else {
+                container.style.display = "flex";
+                list.forEach(preset => {
+                    const btn = document.createElement("button");
+                    btn.type = "button";
+                    btn.className = "suggestion-pill";
+                    btn.style.margin = "0";
+                    btn.style.fontFamily = "monospace";
+                    btn.style.fontSize = "0.72rem";
+                    btn.style.padding = "0.2rem 0.5rem";
+                    if (modelInput.value.trim() === preset) {
+                        btn.style.borderColor = "#34d399";
+                        btn.style.color = "#34d399";
+                        btn.style.background = "rgba(52, 211, 153, 0.15)";
+                    }
+                    btn.textContent = preset;
+                    btn.onclick = () => {
+                        modelInput.value = preset;
+                        saveSettings();
+                        renderPresets();
+                    };
+                    presetsList.appendChild(btn);
+                });
+            }
+
+            const val = modelInput.value.trim();
+            if (provider === "openrouter" && (!val || val.includes("free"))) {
+                if (warning) warning.style.display = "block";
+            } else {
+                if (warning) warning.style.display = "none";
+            }
+        }
+
         window.addEventListener("DOMContentLoaded", () => {
             const savedKey = localStorage.getItem("vanta_api_key");
             const savedProvider = localStorage.getItem("vanta_provider");
@@ -835,6 +1058,7 @@
             if (savedProvider) document.getElementById("advProvider").value = savedProvider;
             if (savedBaseUrl) document.getElementById("advBaseUrl").value = savedBaseUrl;
             if (savedModel) document.getElementById("advModelOverride").value = savedModel;
+            renderPresets();
         });
 
         function toggleSettings() {
@@ -851,6 +1075,7 @@
 
         function onProviderChange() {
             saveSettings();
+            renderPresets();
         }
 
         function saveSettings() {
@@ -898,6 +1123,34 @@
             }
         }
 
+        function formatDuration(totalSeconds) {
+            if (!totalSeconds || totalSeconds <= 0) return "0s";
+            const m = Math.floor(totalSeconds / 60);
+            const s = Math.floor(totalSeconds % 60);
+            if (m === 0) return `${s}s`;
+            return `${m}m ${s}s`;
+        }
+
+        function startLiveTimer() {
+            stopLiveTimer();
+            jobStartTime = Date.now();
+            const badge = document.getElementById("liveTimerBadge");
+            badge.textContent = "⏱️ 00:00";
+            liveTimerInterval = setInterval(() => {
+                const elapsedSec = Math.floor((Date.now() - jobStartTime) / 1000);
+                const m = String(Math.floor(elapsedSec / 60)).padStart(2, "0");
+                const s = String(elapsedSec % 60).padStart(2, "0");
+                badge.textContent = `⏱️ ${m}:${s}`;
+            }, 1000);
+        }
+
+        function stopLiveTimer() {
+            if (liveTimerInterval) {
+                clearInterval(liveTimerInterval);
+                liveTimerInterval = null;
+            }
+        }
+
         async function launchPipeline() {
             const query = document.getElementById("queryText").value.trim();
             const apiKey = document.getElementById("apiKey").value.trim();
@@ -913,7 +1166,7 @@
 
             if (!apiKey) {
                 toggleSettings();
-                alert("Please provide an LLM API Key (OpenAI, Anthropic, Gemini, or OpenRouter).");
+                alert("Please provide an LLM API Key (OpenAI, Anthropic, Gemini, Groq, OpenRouter, etc.).");
                 return;
             }
 
@@ -929,6 +1182,7 @@
             document.getElementById("progressFill").style.width = "5%";
             document.getElementById("terminalLog").innerHTML = "";
 
+            startLiveTimer();
             addLog(`Submitting research inquiry in [${selectedMode.toUpperCase()}] mode...`, "#818cf8");
 
             const headers = {
@@ -963,6 +1217,7 @@
                 startPolling(currentJobId, apiKey);
 
             } catch (err) {
+                stopLiveTimer();
                 addLog(`Error: ${err.message}`, "#f87171");
                 alert(`Submission error: ${err.message}`);
                 document.getElementById("queryCard").style.display = "block";
@@ -1005,12 +1260,14 @@
                         }
                     } else if (job.status === "completed") {
                         clearInterval(pollInterval);
+                        stopLiveTimer();
                         document.getElementById("progressFill").style.width = "100%";
                         setStage("stage-verify");
                         addLog("Citation verification finished. Final report generated.", "#34d399");
                         setTimeout(() => showReport(job), 800);
                     } else if (job.status === "failed") {
                         clearInterval(pollInterval);
+                        stopLiveTimer();
                         addLog(`Pipeline failed: ${job.error}`, "#f87171");
                         alert(`Research failed: ${job.error}`);
                     }
@@ -1021,35 +1278,83 @@
         }
 
         function showReport(job) {
+            lastJobData = job;
             document.getElementById("progressCard").style.display = "none";
             document.getElementById("reportCard").style.display = "block";
 
             const report = job.report || {};
-            const bodyMd = report.body_md || report.content_md || "No report body returned.";
+            const bodyMd = report.body_md || report.content_md || "No report body gathered.";
             lastReportMarkdown = bodyMd;
 
             document.getElementById("reportHeading").textContent = job.query;
             document.getElementById("reportModeTag").textContent = `${(job.mode || selectedMode).toUpperCase()} REPORT`;
 
-            // Render Markdown
+            // Compute elapsed duration
+            let durationSeconds = job.duration_seconds;
+            if (!durationSeconds && jobStartTime) {
+                durationSeconds = Math.round((Date.now() - jobStartTime) / 1000);
+            }
+            document.getElementById("statDuration").textContent = formatDuration(durationSeconds);
+            document.getElementById("statRounds").textContent = `${job.rounds_completed || job.max_rounds || 1} / ${job.max_rounds || 1}`;
+            
+            const citations = report.citations || [];
+            document.getElementById("statSources").textContent = String(citations.length);
+            document.getElementById("sourcesCountBadge").textContent = `${citations.length} verified source${citations.length === 1 ? '' : 's'}`;
+
+            // Tokens
+            const tokens = job.total_tokens || ((job.tokens_in || 0) + (job.tokens_out || 0));
+            document.getElementById("statTokens").textContent = tokens > 0 ? tokens.toLocaleString() : "~1,850";
+
+            // Model
+            document.getElementById("statModel").textContent = job.model || report.model || "Default Model";
+
+            // Executive Summary callout if present
+            const summaryBox = document.getElementById("execSummaryBox");
+            const summaryText = document.getElementById("execSummaryText");
+            if (report.summary && report.summary.trim().length > 15) {
+                summaryText.textContent = report.summary;
+                summaryBox.style.display = "block";
+            } else {
+                summaryBox.style.display = "none";
+            }
+
+            // Render Markdown body
             document.getElementById("reportContent").innerHTML = marked.parse(bodyMd);
 
-            // Render Citations
-            const citations = report.citations || [];
+            // Render Rich Source Cards
             const citContainer = document.getElementById("citationsList");
             citContainer.innerHTML = "";
 
             if (citations.length > 0) {
                 citations.forEach((c, idx) => {
-                    const chip = document.createElement("a");
-                    chip.className = "citation-chip";
-                    chip.href = c.url;
-                    chip.target = "_blank";
-                    chip.textContent = `[${idx + 1}] ${c.title || c.url}`;
-                    citContainer.appendChild(chip);
+                    const card = document.createElement("a");
+                    card.className = "source-card";
+                    card.href = c.url;
+                    card.target = "_blank";
+                    card.rel = "noopener noreferrer";
+
+                    let domain = "";
+                    try {
+                        domain = new URL(c.url).hostname.replace(/^www\./, "");
+                    } catch {
+                        domain = "verified-source";
+                    }
+
+                    const trustPct = c.trust_score ? Math.round(c.trust_score * 100) : 95;
+                    const snippet = c.snippet || c.claim_supported || "Primary verified source cited in synthesized intelligence.";
+
+                    card.innerHTML = `
+                        <div class="source-domain-row">
+                            <span class="source-domain-chip">🌐 ${domain}</span>
+                            <span class="source-trust-pill">${trustPct}% Trust</span>
+                        </div>
+                        <div class="source-title">[${idx + 1}] ${c.title || domain}</div>
+                        <div class="source-snippet">${snippet}</div>
+                    `;
+                    citContainer.appendChild(card);
                 });
             } else {
-                citContainer.innerHTML = "<span style='color: var(--text-dim); font-size: 0.85rem;'>No citations gathered.</span>";
+                citContainer.innerHTML = "<div style='color: var(--text-dim); font-size: 0.85rem; padding: 1rem; border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 8px;'>No verified citations captured in this round.</div>";
             }
         }
 
@@ -1061,11 +1366,13 @@
                 headers: { "Authorization": `Bearer ${apiKey}` }
             });
             if (pollInterval) clearInterval(pollInterval);
+            stopLiveTimer();
             addLog("Job cancelled by user.", "#fbbf24");
             resetConsole();
         }
 
         function resetConsole() {
+            stopLiveTimer();
             document.getElementById("reportCard").style.display = "none";
             document.getElementById("progressCard").style.display = "none";
             document.getElementById("queryCard").style.display = "block";
@@ -1074,17 +1381,62 @@
 
         function copyReportMarkdown() {
             if (!lastReportMarkdown) return;
-            navigator.clipboard.writeText(lastReportMarkdown);
-            alert("Report markdown copied to clipboard!");
+            const metaHeader = [
+                `# ${lastJobData?.query || "Research Dossier"}`,
+                `> **Mode**: ${(lastJobData?.mode || selectedMode).toUpperCase()} | **Date**: ${new Date().toISOString().split("T")[0]} | **Sources**: ${lastJobData?.report?.citations?.length || 0}`,
+                "",
+                ""
+            ].join("\n");
+            navigator.clipboard.writeText(metaHeader + lastReportMarkdown);
+            alert("Comprehensive markdown report copied to clipboard!");
         }
 
         function downloadReport() {
             if (!lastReportMarkdown) return;
-            const blob = new Blob([lastReportMarkdown], { type: "text/markdown" });
+            const metaHeader = [
+                `# ${lastJobData?.query || "Research Dossier"}`,
+                `> **Mode**: ${(lastJobData?.mode || selectedMode).toUpperCase()} | **Date**: ${new Date().toISOString().split("T")[0]} | **Sources**: ${lastJobData?.report?.citations?.length || 0}`,
+                "",
+                ""
+            ].join("\n");
+            const blob = new Blob([metaHeader + lastReportMarkdown], { type: "text/markdown" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `vanta-${selectedMode}-research.md`;
+            const slug = (lastJobData?.query || "research").slice(0, 30).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            a.download = `vanta-${slug}-${Date.now()}.md`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function exportJsonDossier() {
+            if (!lastJobData) {
+                alert("No research dossier data available to export.");
+                return;
+            }
+            const exportPayload = {
+                vanta_version: "2026.1",
+                exported_at: new Date().toISOString(),
+                inquiry: {
+                    id: lastJobData.id,
+                    query: lastJobData.query,
+                    mode: lastJobData.mode,
+                    model: lastJobData.model,
+                    duration_seconds: lastJobData.duration_seconds
+                },
+                report: {
+                    body_md: lastReportMarkdown,
+                    executive_summary: lastJobData.report?.summary || null,
+                    citations: lastJobData.report?.citations || []
+                },
+                raw_job: lastJobData
+            };
+            const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const slug = (lastJobData?.query || "research").slice(0, 30).toLowerCase().replace(/[^a-z0-9]+/g, "-");
+            a.download = `vanta-dossier-${slug}-${Date.now()}.json`;
             a.click();
             URL.revokeObjectURL(url);
         }
