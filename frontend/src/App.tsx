@@ -39,15 +39,52 @@ const cliSnippet = `uv run python cli.py submit "What are the latest advancement
   --mode study \\
   --api-key "sk-..."`;
 
+const TIME_GREETINGS = {
+  morning: [
+    "Good morning, Researcher",
+    "Morning, Researcher",
+    "Good morning, curious mind",
+    "A new day of discovery begins.",
+    "Ready to explore this morning?",
+  ],
+  afternoon: [
+    "Good afternoon, Researcher",
+    "Afternoon, Researcher",
+    "Good afternoon, curious mind",
+    "What shall we uncover this afternoon?",
+    "Ready for your next discovery?",
+  ],
+  evening: [
+    "Good evening, Researcher",
+    "Evening, Researcher",
+    "Good evening, curious mind",
+    "Ready to dig deeper tonight?",
+    "What shall we explore this evening?",
+  ],
+  night: [
+    "Good night, Researcher",
+    "Still researching?",
+    "Burning the midnight oil, Researcher?",
+    "A little late-night curiosity?",
+    "What are we uncovering tonight?",
+    "One more question before you go?",
+    "The night is quiet. What are you curious about?",
+  ],
+};
+
 function getTimeGreeting(): string {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  if (hour >= 17 && hour < 22) return "Good evening";
-  return "Good night";
+  let list: string[];
+  if (hour >= 5 && hour < 12) list = TIME_GREETINGS.morning;
+  else if (hour >= 12 && hour < 17) list = TIME_GREETINGS.afternoon;
+  else if (hour >= 17 && hour < 22) list = TIME_GREETINGS.evening;
+  else list = TIME_GREETINGS.night;
+
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 function App() {
+  const [greeting] = useState(() => getTimeGreeting());
   const [currentPath, setCurrentPath] = useState(
     typeof window !== "undefined" ? window.location.pathname : "/"
   );
@@ -236,13 +273,21 @@ function App() {
         <div className="relative z-10 mx-auto max-w-[880px] min-h-[calc(100vh-140px)] flex flex-col justify-center px-4 py-8">
           <header className="hero text-center mb-8 flex flex-col items-center gap-1.5">
             <h1
-              className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight leading-[1.1] text-foreground"
+              className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight leading-[1.15] text-foreground"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
-              {getTimeGreeting()},{" "}
-              <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent font-medium">
-                Researcher
-              </span>
+              {greeting.split(/(Researcher|curious mind)/g).map((part, i) =>
+                part === "Researcher" || part === "curious mind" ? (
+                  <span
+                    key={i}
+                    className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent font-medium"
+                  >
+                    {part}
+                  </span>
+                ) : (
+                  part
+                )
+              )}
             </h1>
             <h2 className="text-xl sm:text-2xl md:text-3xl font-medium text-slate-100 tracking-tight">
               What would you like to know?

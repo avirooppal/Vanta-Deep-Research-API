@@ -969,7 +969,7 @@
         <div class="console-center-wrapper" id="consoleCenterWrapper">
             <!-- Hero Section: User Local Time Greeting & Centered Pitch -->
             <header class="hero" id="greetingHeader">
-                <h1 class="hero-greeting"><span id="timeGreetingText">Good evening</span>, <span class="user-name">Researcher</span></h1>
+                <h1 class="hero-greeting" id="timeGreetingText">Good night, <span class="user-name">Researcher</span></h1>
                 <div class="hero-subquery">What would you like to know?</div>
                 <p class="hero-subdesc">Use one of the common prompts below or enter your own inquiry to begin</p>
             </header>
@@ -1465,16 +1465,53 @@
             }
         });
 
+        const TIME_GREETINGS = {
+            morning: [
+                "Good morning, Researcher",
+                "Morning, Researcher",
+                "Good morning, curious mind",
+                "A new day of discovery begins.",
+                "Ready to explore this morning?"
+            ],
+            afternoon: [
+                "Good afternoon, Researcher",
+                "Afternoon, Researcher",
+                "Good afternoon, curious mind",
+                "What shall we uncover this afternoon?",
+                "Ready for your next discovery?"
+            ],
+            evening: [
+                "Good evening, Researcher",
+                "Evening, Researcher",
+                "Good evening, curious mind",
+                "Ready to dig deeper tonight?",
+                "What shall we explore this evening?"
+            ],
+            night: [
+                "Good night, Researcher",
+                "Still researching?",
+                "Burning the midnight oil, Researcher?",
+                "A little late-night curiosity?",
+                "What are we uncovering tonight?",
+                "One more question before you go?",
+                "The night is quiet. What are you curious about?"
+            ]
+        };
+
         function updateGreeting() {
             const hour = new Date().getHours();
-            let greeting = "Good evening";
-            if (hour >= 5 && hour < 12) greeting = "Good morning";
-            else if (hour >= 12 && hour < 17) greeting = "Good afternoon";
-            else if (hour >= 17 && hour < 22) greeting = "Good evening";
-            else greeting = "Good night";
+            let list;
+            if (hour >= 5 && hour < 12) list = TIME_GREETINGS.morning;
+            else if (hour >= 12 && hour < 17) list = TIME_GREETINGS.afternoon;
+            else if (hour >= 17 && hour < 22) list = TIME_GREETINGS.evening;
+            else list = TIME_GREETINGS.night;
 
+            const text = list[Math.floor(Math.random() * list.length)];
             const el = document.getElementById("timeGreetingText");
-            if (el) el.textContent = greeting;
+            if (el) {
+                const highlighted = text.replace(/(Researcher|curious mind)/g, '<span class="user-name">$1</span>');
+                el.innerHTML = highlighted;
+            }
         }
 
         window.addEventListener("DOMContentLoaded", () => {
