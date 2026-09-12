@@ -39,6 +39,14 @@ const cliSnippet = `uv run python cli.py submit "What are the latest advancement
   --mode study \\
   --api-key "sk-..."`;
 
+function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  if (hour >= 17 && hour < 22) return "Good evening";
+  return "Good night";
+}
+
 function App() {
   const [currentPath, setCurrentPath] = useState(
     typeof window !== "undefined" ? window.location.pathname : "/"
@@ -225,19 +233,22 @@ function App() {
 
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
-        <div className="relative z-10 mx-auto max-w-[1100px] px-4 py-6">
-          <header className="hero text-center mb-9 flex flex-col items-center gap-3">
-            <span className="text-xs sm:text-sm font-semibold uppercase tracking-[0.32em] text-indigo-400/90">
-              Multi-Agent Autonomous Intelligence
-            </span>
+        <div className="relative z-10 mx-auto max-w-[880px] min-h-[calc(100vh-140px)] flex flex-col justify-center px-4 py-8">
+          <header className="hero text-center mb-8 flex flex-col items-center gap-1.5">
             <h1
-              className="text-5xl sm:text-6xl md:text-7xl font-normal tracking-tight leading-[1.05] text-foreground max-w-5xl"
+              className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight leading-[1.1] text-foreground"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
-              Autonomous research <em className="not-italic text-muted-foreground">without</em> hallucinated shortcuts.
+              {getTimeGreeting()},{" "}
+              <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent font-medium">
+                Researcher
+              </span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
-              Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-medium text-slate-100 tracking-tight">
+              What would you like to know?
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1">
+              Use one of the common prompts below or enter your own to begin
             </p>
           </header>
           <ResearchConsole />

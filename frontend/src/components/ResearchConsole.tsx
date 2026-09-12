@@ -568,7 +568,7 @@ export function ResearchConsole() {
           </div>
 
           {/* Quick Suggestions underneath card */}
-          <div className="suggestions flex flex-wrap items-center gap-2 px-1">
+          <div className="suggestions flex flex-wrap items-center justify-center gap-2 px-1 pt-1">
             <span className="text-xs text-muted-foreground mr-1">Try:</span>
             <button
               type="button"

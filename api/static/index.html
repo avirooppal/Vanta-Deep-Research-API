@@ -139,45 +139,60 @@
             margin-right: 0.4rem;
         }
 
-        /* Hero Pitch */
-        .hero {
-            text-align: center;
-            padding: 1.5rem 0 1rem 0;
+        /* Centered Console Layout */
+        .console-center-wrapper {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.85rem;
+            justify-content: center;
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+            min-height: calc(100vh - 160px);
+            padding: 1.5rem 0;
+            transition: all 0.3s ease;
         }
 
-        .hero-badge {
+        .hero {
+            text-align: center;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            width: 100%;
+        }
+
+        .hero-greeting {
+            font-family: var(--font-display);
+            font-size: 3.5rem;
+            font-weight: 400;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            color: var(--text-main);
+        }
+
+        .hero-greeting .user-name {
+            background: linear-gradient(135deg, #c084fc 0%, #818cf8 50%, #f472b6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 500;
+        }
+
+        .hero-subquery {
+            font-size: 1.65rem;
+            font-weight: 500;
+            color: #f8fafc;
+            margin-top: 0.2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .hero-subdesc {
             font-size: 0.925rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.32em;
-            color: #818cf8;
-        }
-
-        .hero h1 {
-            font-family: var(--font-display);
-            font-size: 4.25rem;
-            font-weight: 400;
-            line-height: 1.06;
-            letter-spacing: -0.03em;
-            max-width: 960px;
-        }
-
-        .hero h1 em {
-            font-family: var(--font-display);
-            font-style: italic;
             color: var(--text-muted);
-        }
-
-        .hero-desc {
-            max-width: 820px;
-            font-size: 1.2rem;
-            color: #cbd5e1;
-            line-height: 1.65;
-            font-weight: 400;
+            max-width: 520px;
+            line-height: 1.5;
+            margin-top: 0.25rem;
         }
 
         /* Liquid Glass Cards */
@@ -950,107 +965,110 @@
             </div>
         </nav>
 
-        <!-- Hero Section -->
-        <header class="hero">
-            <span class="hero-badge">Multi-Agent Autonomous Intelligence</span>
-            <h1>Autonomous research <em>without</em> hallucinated shortcuts.</h1>
-            <p class="hero-desc">Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.</p>
-        </header>
+        <!-- Main Centered Launchpad Wrapper -->
+        <div class="console-center-wrapper" id="consoleCenterWrapper">
+            <!-- Hero Section: User Local Time Greeting & Centered Pitch -->
+            <header class="hero" id="greetingHeader">
+                <h1 class="hero-greeting"><span id="timeGreetingText">Good evening</span>, <span class="user-name">Researcher</span></h1>
+                <div class="hero-subquery">What would you like to know?</div>
+                <p class="hero-subdesc">Use one of the common prompts below or enter your own inquiry to begin</p>
+            </header>
 
-        <!-- Floating Input Card (Matches Screenshot & React Frontend) -->
-        <div class="floating-input-card" id="queryCard" style="margin-bottom: 1.25rem;">
-            <!-- Top Row: Textarea + Top-Right Scope/Mode Pill -->
-            <div class="input-top-row">
-                <textarea id="queryText" rows="3" placeholder="Ask whatever you want...." oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
+            <!-- Floating Input Card (Matches Screenshot & React Frontend) -->
+            <div class="floating-input-card" id="queryCard" style="width: 100%; margin-bottom: 1.25rem;">
+                <!-- Top Row: Textarea + Top-Right Scope/Mode Pill -->
+                <div class="input-top-row">
+                    <textarea id="queryText" rows="3" placeholder="Ask whatever you want...." oninput="updateCharCount()" onkeydown="handleQueryKeyDown(event)"></textarea>
 
-                <!-- Scope / Mode Pill Selector (Top Right) -->
-                <div class="scope-selector-container" id="scopeSelectorContainer">
-                    <button type="button" class="scope-pill-btn" id="scopePillBtn" onclick="toggleScopeDropdown(event)" title="Select research scope and depth">
-                        <span id="scopeSelectedIcon">🔬</span>
-                        <span id="scopeSelectedLabel">All Web (Research)</span>
-                        <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
-                    </button>
-
-                    <div class="scope-dropdown-menu" id="scopeDropdownMenu">
-                        <div class="scope-item active" id="scope-opt-research" onclick="selectScopeMode('research', '🔬', 'All Web (Research)', 3)">
-                            <span style="font-size: 1.2rem;">🔬</span>
-                            <div style="display: flex; flex-direction: column;">
-                                <span class="scope-item-name">All Web (Research)</span>
-                                <span class="scope-item-desc">Comprehensive multi-angle synthesis (3 rounds)</span>
-                            </div>
-                        </div>
-                        <div class="scope-item" id="scope-opt-study" onclick="selectScopeMode('study', '🎓', 'Study Deep', 2)">
-                            <span style="font-size: 1.2rem;">🎓</span>
-                            <div style="display: flex; flex-direction: column;">
-                                <span class="scope-item-name">Study Deep</span>
-                                <span class="scope-item-desc">Foundational concepts & principles (2 rounds)</span>
-                            </div>
-                        </div>
-                        <div class="scope-item" id="scope-opt-brief" onclick="selectScopeMode('brief', '⚡', 'Executive Brief', 1)">
-                            <span style="font-size: 1.2rem;">⚡</span>
-                            <div style="display: flex; flex-direction: column;">
-                                <span class="scope-item-name">Executive Brief</span>
-                                <span class="scope-item-desc">Rapid high-level strategic takeaway (1 round)</span>
-                            </div>
-                        </div>
-                        <div class="scope-item" id="scope-opt-deep" onclick="selectScopeMode('deep', '🏛️', 'Academic Deep', 4)">
-                            <span style="font-size: 1.2rem;">🏛️</span>
-                            <div style="display: flex; flex-direction: column;">
-                                <span class="scope-item-name">Academic Deep</span>
-                                <span class="scope-item-desc">Exhaustive scholarly critique & verification (4 rounds)</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Bar: Rounds & Settings on left, Char Count & Circular Send Arrow on right -->
-            <div class="input-bottom-bar">
-                <div class="input-actions-left">
-                    <!-- Rounds Pill Selector -->
-                    <div class="rounds-pill-wrapper" id="roundsPillWrapper">
-                        <button type="button" class="pill-btn" id="roundsPillBtn" onclick="toggleRoundsDropdown(event)" title="Adjust research rounds">
-                            <span>⏱️</span>
-                            <span id="roundsSelectedLabel">3 Rounds</span>
-                            <span style="font-size: 0.65rem; opacity: 0.7;">▾</span>
+                    <!-- Scope / Mode Pill Selector (Top Right) -->
+                    <div class="scope-selector-container" id="scopeSelectorContainer">
+                        <button type="button" class="scope-pill-btn" id="scopePillBtn" onclick="toggleScopeDropdown(event)" title="Select research scope and depth">
+                            <span id="scopeSelectedIcon">🔬</span>
+                            <span id="scopeSelectedLabel">All Web (Research)</span>
+                            <span style="font-size: 0.7rem; opacity: 0.7;">▾</span>
                         </button>
 
-                        <div class="rounds-dropdown-menu" id="roundsDropdownMenu">
-                            <div class="rounds-item" id="round-opt-1" onclick="selectRounds(1)">1 Round (Fast)</div>
-                            <div class="rounds-item" id="round-opt-2" onclick="selectRounds(2)">2 Rounds</div>
-                            <div class="rounds-item active" id="round-opt-3" onclick="selectRounds(3)">3 Rounds (Balanced)</div>
-                            <div class="rounds-item" id="round-opt-4" onclick="selectRounds(4)">4 Rounds</div>
-                            <div class="rounds-item" id="round-opt-5" onclick="selectRounds(5)">5 Rounds (Max)</div>
+                        <div class="scope-dropdown-menu" id="scopeDropdownMenu">
+                            <div class="scope-item active" id="scope-opt-research" onclick="selectScopeMode('research', '🔬', 'All Web (Research)', 3)">
+                                <span style="font-size: 1.2rem;">🔬</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="scope-item-name">All Web (Research)</span>
+                                    <span class="scope-item-desc">Comprehensive multi-angle synthesis (3 rounds)</span>
+                                </div>
+                            </div>
+                            <div class="scope-item" id="scope-opt-study" onclick="selectScopeMode('study', '🎓', 'Study Deep', 2)">
+                                <span style="font-size: 1.2rem;">🎓</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="scope-item-name">Study Deep</span>
+                                    <span class="scope-item-desc">Foundational concepts & principles (2 rounds)</span>
+                                </div>
+                            </div>
+                            <div class="scope-item" id="scope-opt-brief" onclick="selectScopeMode('brief', '⚡', 'Executive Brief', 1)">
+                                <span style="font-size: 1.2rem;">⚡</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="scope-item-name">Executive Brief</span>
+                                    <span class="scope-item-desc">Rapid high-level strategic takeaway (1 round)</span>
+                                </div>
+                            </div>
+                            <div class="scope-item" id="scope-opt-deep" onclick="selectScopeMode('deep', '🏛️', 'Academic Deep', 4)">
+                                <span style="font-size: 1.2rem;">🏛️</span>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span class="scope-item-name">Academic Deep</span>
+                                    <span class="scope-item-desc">Exhaustive scholarly critique & verification (4 rounds)</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <!-- LLM Settings Pill -->
-                    <button type="button" class="pill-btn" onclick="openSettingsModal()" title="Configure AI Provider and API Keys">
-                        <span>⚙️</span>
-                        <span id="activeProviderPillText">LLM Settings</span>
-                    </button>
                 </div>
 
-                <div class="input-actions-right">
-                    <span class="char-counter" id="charCounter">0/2000</span>
-                    <button type="button" class="send-arrow-btn" id="submitBtn" onclick="launchPipeline()" title="Launch Research Fleet">
-                        →
-                    </button>
+                <!-- Bottom Bar: Rounds & Settings on left, Char Count & Circular Send Arrow on right -->
+                <div class="input-bottom-bar">
+                    <div class="input-actions-left">
+                        <!-- Rounds Pill Selector -->
+                        <div class="rounds-pill-wrapper" id="roundsPillWrapper">
+                            <button type="button" class="pill-btn" id="roundsPillBtn" onclick="toggleRoundsDropdown(event)" title="Adjust research rounds">
+                                <span>⏱️</span>
+                                <span id="roundsSelectedLabel">3 Rounds</span>
+                                <span style="font-size: 0.65rem; opacity: 0.7;">▾</span>
+                            </button>
+
+                            <div class="rounds-dropdown-menu" id="roundsDropdownMenu">
+                                <div class="rounds-item" id="round-opt-1" onclick="selectRounds(1)">1 Round (Fast)</div>
+                                <div class="rounds-item" id="round-opt-2" onclick="selectRounds(2)">2 Rounds</div>
+                                <div class="rounds-item active" id="round-opt-3" onclick="selectRounds(3)">3 Rounds (Balanced)</div>
+                                <div class="rounds-item" id="round-opt-4" onclick="selectRounds(4)">4 Rounds</div>
+                                <div class="rounds-item" id="round-opt-5" onclick="selectRounds(5)">5 Rounds (Max)</div>
+                            </div>
+                        </div>
+
+                        <!-- LLM Settings Pill -->
+                        <button type="button" class="pill-btn" onclick="openSettingsModal()" title="Configure AI Provider and API Keys">
+                            <span>⚙️</span>
+                            <span id="activeProviderPillText">LLM Settings</span>
+                        </button>
+                    </div>
+
+                    <div class="input-actions-right">
+                        <span class="char-counter" id="charCounter">0/2000</span>
+                        <button type="button" class="send-arrow-btn" id="submitBtn" onclick="launchPipeline()" title="Launch Research Fleet">
+                            →
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Hidden input back-compat elements so any legacy script reference works seamlessly -->
-        <input type="hidden" id="maxRounds" value="3">
-        <input type="hidden" id="modeSelect" value="research">
+            <!-- Hidden input back-compat elements so any legacy script reference works seamlessly -->
+            <input type="hidden" id="maxRounds" value="3">
+            <input type="hidden" id="modeSelect" value="research">
 
-        <!-- Suggestion Chips Below Floating Card -->
-        <div class="suggestions" style="margin-bottom: 2rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.8rem; color: var(--text-dim); margin-right: 0.25rem;">Try:</span>
-            <span class="suggestion-pill" onclick="setQuery('What are the latest breakthroughs in room-temperature solid-state batteries?', 'research')">Solid-state batteries</span>
-            <span class="suggestion-pill" onclick="setQuery('Explain quantum computing and qubit superposition from first principles', 'study')">Quantum computing (Study)</span>
-            <span class="suggestion-pill" onclick="setQuery('Synthesize an executive brief on EU AI Act compliance timelines and penalty caps', 'brief')">EU AI Act (Brief)</span>
-            <span class="suggestion-pill" onclick="setQuery('State space models (Mamba) vs Transformers: architectural trade-offs', 'deep')">Mamba vs Transformers (Deep)</span>
+            <!-- Suggestion Chips Below Floating Card (Centered) -->
+            <div class="suggestions" id="suggestionsRow" style="width: 100%; justify-content: center; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 0.8rem; color: var(--text-dim); margin-right: 0.25rem;">Try:</span>
+                <span class="suggestion-pill" onclick="setQuery('What are the latest breakthroughs in room-temperature solid-state batteries?', 'research')">Solid-state batteries</span>
+                <span class="suggestion-pill" onclick="setQuery('Explain quantum computing and qubit superposition from first principles', 'study')">Quantum computing (Study)</span>
+                <span class="suggestion-pill" onclick="setQuery('Synthesize an executive brief on EU AI Act compliance timelines and penalty caps', 'brief')">EU AI Act (Brief)</span>
+                <span class="suggestion-pill" onclick="setQuery('State space models (Mamba) vs Transformers: architectural trade-offs', 'deep')">Mamba vs Transformers (Deep)</span>
+            </div>
         </div>
 
                 <!-- Live Pipeline Execution Tracker -->
@@ -1447,6 +1465,18 @@
             }
         });
 
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            let greeting = "Good evening";
+            if (hour >= 5 && hour < 12) greeting = "Good morning";
+            else if (hour >= 12 && hour < 17) greeting = "Good afternoon";
+            else if (hour >= 17 && hour < 22) greeting = "Good evening";
+            else greeting = "Good night";
+
+            const el = document.getElementById("timeGreetingText");
+            if (el) el.textContent = greeting;
+        }
+
         window.addEventListener("DOMContentLoaded", () => {
             const savedKey = localStorage.getItem("vanta_api_key");
             const savedProvider = localStorage.getItem("vanta_provider");
@@ -1459,6 +1489,7 @@
             renderPresets();
             updateCharCount();
             updateActiveProviderPill();
+            updateGreeting();
         });
 
         function onProviderChange() {
@@ -1553,7 +1584,8 @@
             saveSettings();
 
             // UI Transitions
-            document.getElementById("queryCard").style.display = "none";
+            const centerWrapper = document.getElementById("consoleCenterWrapper");
+            if (centerWrapper) centerWrapper.style.display = "none";
             document.getElementById("progressCard").style.display = "block";
             document.getElementById("reportCard").style.display = "none";
             document.getElementById("submitBtn").disabled = true;
@@ -1756,10 +1788,13 @@
             stopLiveTimer();
             document.getElementById("reportCard").style.display = "none";
             document.getElementById("progressCard").style.display = "none";
+            const centerWrapper = document.getElementById("consoleCenterWrapper");
+            if (centerWrapper) centerWrapper.style.display = "flex";
             document.getElementById("queryCard").style.display = "block";
             document.getElementById("submitBtn").disabled = false;
             document.getElementById("queryText").value = "";
             updateCharCount();
+            updateGreeting();
             focusQueryInput();
         }
 
