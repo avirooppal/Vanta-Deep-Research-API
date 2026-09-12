@@ -226,17 +226,17 @@ function App() {
       {/* Page Content: Console View vs Home View */}
       {isConsolePage ? (
         <div className="relative z-10 mx-auto max-w-[1100px] px-4 py-6">
-          <header className="hero text-center mb-8 flex flex-col items-center gap-2.5">
-            <span className="text-[11px] font-medium uppercase tracking-[0.3em] text-muted-foreground">
+          <header className="hero text-center mb-9 flex flex-col items-center gap-3">
+            <span className="text-xs sm:text-sm font-semibold uppercase tracking-[0.32em] text-indigo-400/90">
               Multi-Agent Autonomous Intelligence
             </span>
             <h1
-              className="text-4xl sm:text-5xl font-normal tracking-tight text-foreground"
+              className="text-5xl sm:text-6xl md:text-7xl font-normal tracking-tight leading-[1.05] text-foreground max-w-5xl"
               style={{ fontFamily: "'Instrument Serif', serif" }}
             >
               Autonomous research <em className="not-italic text-muted-foreground">without</em> hallucinated shortcuts.
             </h1>
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed font-normal">
               Launch targeted multi-round research fleets. Select your mode, enter your query, and let the agents search, validate, extract, and synthesize verified evidence.
             </p>
           </header>
