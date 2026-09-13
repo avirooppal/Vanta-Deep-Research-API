@@ -130,7 +130,52 @@ const MODEL_PRESETS: Record<string, string[]> = {
   xai: ["grok-2-latest", "grok-beta"],
 };
 
+const TIME_GREETINGS = {
+  morning: [
+    "Good morning, Researcher",
+    "Morning, Researcher",
+    "Good morning, curious mind",
+    "A new day of discovery begins.",
+    "Ready to explore this morning?",
+  ],
+  afternoon: [
+    "Good afternoon, Researcher",
+    "Afternoon, Researcher",
+    "Good afternoon, curious mind",
+    "What shall we uncover this afternoon?",
+    "Ready for your next discovery?",
+  ],
+  evening: [
+    "Good evening, Researcher",
+    "Evening, Researcher",
+    "Good evening, curious mind",
+    "Ready to dig deeper tonight?",
+    "What shall we explore this evening?",
+  ],
+  night: [
+    "Good night, Researcher",
+    "Still researching?",
+    "Burning the midnight oil, Researcher?",
+    "A little late-night curiosity?",
+    "What are we uncovering tonight?",
+    "One more question before you go?",
+    "The night is quiet. What are you curious about?",
+  ],
+};
+
+function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  let list: string[];
+  if (hour >= 5 && hour < 12) list = TIME_GREETINGS.morning;
+  else if (hour >= 12 && hour < 17) list = TIME_GREETINGS.afternoon;
+  else if (hour >= 17 && hour < 22) list = TIME_GREETINGS.evening;
+  else list = TIME_GREETINGS.night;
+
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 export function ResearchConsole() {
+  const [greeting, setGreeting] = useState(() => getTimeGreeting());
   const [mode, setMode] = useState("research");
   const [rounds, setRounds] = useState(3);
   const [query, setQuery] = useState("");
@@ -332,10 +377,16 @@ export function ResearchConsole() {
           setActiveStageIndex(6);
           addLog("Pipeline complete! Final report synthesized.");
           if (job.duration_seconds) setFinalDuration(job.duration_seconds);
+
+          const reportObj = typeof job.report === "object" && job.report !== null ? job.report : null;
+          const reportMd = reportObj?.body_md || reportObj?.content_md || job.report_markdown || (typeof job.report === "string" ? job.report : "") || job.body_md || "";
+          const citations = reportObj?.citations || job.citations || [];
+          const summary = reportObj?.summary || job.summary || "";
+
           setReport({
-            summary: job.summary,
-            body_md: job.report_markdown || job.report || job.body_md || "",
-            citations: job.citations || [],
+            summary: summary,
+            body_md: typeof reportMd === "string" ? reportMd : JSON.stringify(reportMd),
+            citations: Array.isArray(citations) ? citations : [],
           });
           setLoading(false);
         } else if (job.status === "failed") {
@@ -435,6 +486,7 @@ export function ResearchConsole() {
     setProgress(0);
     setLoading(false);
     setLogs([]);
+    setGreeting(getTimeGreeting());
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 50);
@@ -443,7 +495,36 @@ export function ResearchConsole() {
   const currentScope = SCOPES.find((s) => s.id === mode) || SCOPES[0];
 
   return (
-    <div className="w-full space-y-6">
+    <div className={`w-full transition-all duration-300 mx-auto ${!loading && !report ? "max-w-[880px] min-h-[calc(100vh-140px)] flex flex-col justify-center" : "max-w-5xl"}`}>
+      {/* 0. Centered Time Greeting Header (Only visible on Idle Query Screen) */}
+      {!loading && !report && (
+        <header className="hero text-center mb-8 flex flex-col items-center gap-1.5">
+          <h1
+            className="text-4xl sm:text-5xl md:text-6xl font-normal tracking-tight leading-[1.15] text-foreground"
+            style={{ fontFamily: "'Instrument Serif', serif" }}
+          >
+            {greeting.split(/(Researcher|curious mind)/g).map((part, i) =>
+              part === "Researcher" || part === "curious mind" ? (
+                <span
+                  key={i}
+                  className="bg-gradient-to-r from-purple-400 via-indigo-300 to-pink-400 bg-clip-text text-transparent font-medium"
+                >
+                  {part}
+                </span>
+              ) : (
+                part
+              )
+            )}
+          </h1>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-medium text-slate-100 tracking-tight">
+            What would you like to know?
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mt-1">
+            Use one of the common prompts below or enter your own to begin
+          </p>
+        </header>
+      )}
+
       {/* ============================================================ */}
       {/* 1. Floating Input Card (Exact Match with Screenshot)          */}
       {/* ============================================================ */}
@@ -826,7 +907,16 @@ export function ResearchConsole() {
           {/* Rendered Markdown Report */}
           <div
             className="prose prose-invert mt-6 max-w-none text-slate-200 text-sm leading-relaxed space-y-4 [&_h1]:text-2xl [&_h1]:font-serif [&_h1]:text-white [&_h2]:text-xl [&_h2]:font-serif [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h2]:border-b [&_h2]:border-white/10 [&_h2]:pb-1.5 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_p]:mb-3 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-3 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-3 [&_li]:mb-1 [&_blockquote]:border-l-2 [&_blockquote]:border-emerald-500/50 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-muted-foreground [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:border-white/10 [&_th]:bg-white/5 [&_th]:p-2 [&_td]:border [&_td]:border-white/10 [&_td]:p-2 [&_a]:text-cyan-400 [&_a]:underline hover:[&_a]:text-cyan-300 [&_strong]:text-white"
-            dangerouslySetInnerHTML={{ __html: marked.parse(report.body_md || "") as string }}
+            dangerouslySetInnerHTML={{
+              __html: (() => {
+                try {
+                  const raw = typeof report.body_md === "string" ? report.body_md : JSON.stringify(report.body_md || "");
+                  return (marked.parse(raw || "") as string) || "<p>No report body generated.</p>";
+                } catch (e: any) {
+                  return `<p class="text-red-400">Failed to render report: ${e.message}</p>`;
+                }
+              })(),
+            }}
           />
 
           {/* Verified Sources Gallery */}

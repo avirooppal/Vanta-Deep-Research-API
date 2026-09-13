@@ -1732,8 +1732,8 @@
             document.getElementById("progressCard").style.display = "none";
             document.getElementById("reportCard").style.display = "block";
 
-            const report = job.report || {};
-            const bodyMd = report.body_md || report.content_md || "No report body gathered.";
+            const report = typeof job.report === "object" && job.report !== null ? job.report : {};
+            const bodyMd = typeof report.body_md === "string" ? report.body_md : (typeof report.content_md === "string" ? report.content_md : (typeof job.report === "string" ? job.report : (job.report_markdown || "No report body gathered.")));
             lastReportMarkdown = bodyMd;
 
             document.getElementById("reportHeading").textContent = job.query;
@@ -1769,7 +1769,11 @@
             }
 
             // Render Markdown body
-            document.getElementById("reportContent").innerHTML = marked.parse(bodyMd);
+            try {
+                document.getElementById("reportContent").innerHTML = marked.parse(bodyMd);
+            } catch (e) {
+                document.getElementById("reportContent").innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${bodyMd}</pre>`;
+            }
 
             // Render Rich Source Cards
             const citContainer = document.getElementById("citationsList");
