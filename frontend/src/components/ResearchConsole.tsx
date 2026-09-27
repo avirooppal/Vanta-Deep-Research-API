@@ -108,9 +108,17 @@ const STAGES = [
   { id: "verify", name: "Verifier", stageNum: "Stage 7" },
 ];
 
+const isBrowserLocal =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "0.0.0.0");
+
+const CLOUD_BACKEND_URL = "https://vanta-backend-e4li.onrender.com";
+
 const DEFAULT_API_BASE = (
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
-  "http://localhost:8000"
+  (isBrowserLocal ? "http://localhost:8000" : CLOUD_BACKEND_URL)
 ).replace(/\/$/, "");
 
 const PROVIDER_OPTIONS: SelectOption<string>[] = [
@@ -202,10 +210,18 @@ export function ResearchConsole() {
   const [baseUrl, setBaseUrl] = useState("");
   const [modelOverride, setModelOverride] = useState("");
   const [backendUrl, setBackendUrl] = useState<string>(() => {
-    return (
-      (typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) ||
-      DEFAULT_API_BASE
-    ).replace(/\/$/, "");
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("vanta_backend_url");
+      if (saved) {
+        // If user is on hosted cloud (Vercel) but saved value is old localhost, automatically migrate to cloud URL
+        if (!isBrowserLocal && (saved.includes("localhost") || saved.includes("127.0.0.1"))) {
+          localStorage.setItem("vanta_backend_url", CLOUD_BACKEND_URL);
+          return CLOUD_BACKEND_URL;
+        }
+        return saved.replace(/\/$/, "");
+      }
+    }
+    return DEFAULT_API_BASE;
   });
   const [backendStatus, setBackendStatus] = useState<"checking" | "connected" | "disconnected">("checking");
   const [backendLatency, setBackendLatency] = useState<number | null>(null);
@@ -400,17 +416,23 @@ export function ResearchConsole() {
 
       if (isConnectionIssue) {
         setBackendStatus("disconnected");
-        addLog(`[CONNECTION REFUSED] Cannot connect to Vanta backend at: ${activeHost}`);
-        addLog(`→ Start local server: 'uv run uvicorn api.app:app --port 8000'`);
-        addLog(`→ Or open Settings (gear icon) to configure a remote or tunnel URL.`);
-        alert(
-          `Connection Failed: Cannot reach Vanta backend at:\n${activeHost}\n\n` +
-          `• If running locally: Please start your backend server in terminal:\n` +
-          `   uv run uvicorn api.app:app --port 8000 --reload\n` +
-          `   (or: docker compose -f deploy/docker-compose.yml up -d)\n\n` +
-          `• If using a remote server or tunnel (ngrok / Cloudflare / Railway):\n` +
-          `   Click the Settings button (⚙️) to update your Vanta Backend API URL.`
-        );
+        addLog(`[CONNECTION FAILED] Could not reach Vanta backend at: ${activeHost}`);
+        if (isBrowserLocal) {
+          addLog(`→ Start local server: 'uv run uvicorn api.app:app --port 8000'`);
+          alert(
+            `Connection Failed: Cannot reach Vanta backend at:\n${activeHost}\n\n` +
+            `• Make sure your local backend server is running in terminal:\n` +
+            `   uv run uvicorn api.app:app --port 8000 --reload\n` +
+            `   (or: docker compose -f deploy/docker-compose.yml up -d)`
+          );
+        } else {
+          addLog(`→ Cloud backend may be waking up from idle. Wait ~45s and retry.`);
+          alert(
+            `Connection Failed: Cannot reach Vanta cloud backend at:\n${activeHost}\n\n` +
+            `• If your Render free web service was idle, it takes ~45–60 seconds to wake up.\n` +
+            `• Please wait a moment, test ping in Settings (⚙️), and try again.`
+          );
+        }
       } else {
         alert(`Launch error: ${err.message}`);
       }
@@ -1157,7 +1179,7 @@ export function ResearchConsole() {
                       setBackendUrl(e.target.value);
                       localStorage.setItem("vanta_backend_url", e.target.value.trim());
                     }}
-                    placeholder="http://localhost:8000"
+                    placeholder={isBrowserLocal ? "http://localhost:8000" : CLOUD_BACKEND_URL}
                     className="form-input flex-1 font-mono text-xs"
                   />
                   <button
@@ -1170,19 +1192,47 @@ export function ResearchConsole() {
                 </div>
 
                 <div className="text-[11px] text-muted-foreground mt-2 space-y-1">
-                  <p>
-                    Default: <code className="text-emerald-400 bg-white/5 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
-                  </p>
-                  {backendStatus === "disconnected" && (
-                    <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs leading-relaxed mt-2">
-                      <span className="font-semibold text-rose-400">Backend not reachable:</span> Make sure your local Vanta backend is running:
-                      <div className="mt-1 font-mono text-[11px] bg-black/40 px-2 py-1 rounded text-slate-200 select-all">
-                        uv run uvicorn api.app:app --port 8000 --reload
-                      </div>
-                      <p className="mt-1 text-[11px] text-slate-400">
-                        Or if hosted remotely, enter your public URL (e.g. ngrok, Cloudflare Tunnel, Railway).
+                  {isBrowserLocal ? (
+                    <>
+                      <p>
+                        Default: <code className="text-emerald-400 bg-white/5 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
                       </p>
-                    </div>
+                      {backendStatus === "disconnected" && (
+                        <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs leading-relaxed mt-2">
+                          <span className="font-semibold text-rose-400">Backend not reachable:</span> Make sure your local Vanta backend is running:
+                          <div className="mt-1 font-mono text-[11px] bg-black/40 px-2 py-1 rounded text-slate-200 select-all">
+                            uv run uvicorn api.app:app --port 8000 --reload
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Default Cloud Fleet:</span>
+                        {backendUrl !== CLOUD_BACKEND_URL && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setBackendUrl(CLOUD_BACKEND_URL);
+                              localStorage.setItem("vanta_backend_url", CLOUD_BACKEND_URL);
+                              checkBackendHealth(CLOUD_BACKEND_URL);
+                            }}
+                            className="text-indigo-400 hover:text-indigo-300 text-[11px] cursor-pointer hover:underline font-mono"
+                          >
+                            Reset to Default Cloud
+                          </button>
+                        )}
+                      </div>
+                      {backendStatus === "disconnected" && (
+                        <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs leading-relaxed mt-2">
+                          <span className="font-semibold text-amber-400">Cloud backend is connecting:</span> Render free web services spin down after inactivity and take ~45–60 seconds to wake up on the first request.
+                          <div className="mt-1 text-[11px] text-slate-300">
+                            Please wait a moment and click <strong>Test Ping</strong> above.
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -1338,13 +1388,14 @@ export function ResearchConsole() {
                   setApiKey("");
                   setBaseUrl("");
                   setModelOverride("");
-                  setBackendUrl("http://localhost:8000");
+                  const defaultUrl = isBrowserLocal ? "http://localhost:8000" : CLOUD_BACKEND_URL;
+                  setBackendUrl(defaultUrl);
                   localStorage.removeItem("vanta_api_key");
                   localStorage.removeItem("vanta_key");
                   localStorage.removeItem("vanta_base_url");
                   localStorage.removeItem("vanta_model_override");
                   localStorage.removeItem("vanta_backend_url");
-                  checkBackendHealth("http://localhost:8000");
+                  checkBackendHealth(defaultUrl);
                 }}
                 className="px-3.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >

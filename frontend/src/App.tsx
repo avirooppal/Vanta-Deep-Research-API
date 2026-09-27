@@ -67,7 +67,13 @@ function App() {
     }
   };
 
-  const isConsolePage = currentPath === "/console";
+  const isLocalHost =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.hostname === "0.0.0.0");
+
+  const isConsolePage = isLocalHost || currentPath === "/console";
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#04101d] text-foreground">
@@ -100,6 +106,10 @@ function App() {
             <a
               href="/"
               onClick={(e) => {
+                if (isLocalHost) {
+                  e.preventDefault();
+                  return;
+                }
                 e.preventDefault();
                 navigate("/");
               }}
@@ -119,7 +129,7 @@ function App() {
               Fleet Active
             </span>
             <a
-              href={`${((typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) || "http://localhost:8000").replace(/\/$/, "")}/docs`}
+              href={`${((typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) || (isLocalHost ? "http://localhost:8000" : "https://vanta-backend-e4li.onrender.com")).replace(/\/$/, "")}/docs`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -134,14 +144,16 @@ function App() {
             >
               GitHub
             </a>
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
-            >
-              <ArrowLeft className="size-3" />
-              Overview
-            </button>
+            {!isLocalHost && (
+              <button
+                type="button"
+                onClick={() => navigate("/")}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-white/10 cursor-pointer"
+              >
+                <ArrowLeft className="size-3" />
+                Overview
+              </button>
+            )}
           </div>
         </nav>
       ) : (
