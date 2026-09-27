@@ -10,11 +10,13 @@ from db.models.webhook import WebhookEndpoint
 def test_hmac_signature():
     secret = "my_secret_key"
     payload = '{"event": "test"}'
-    expected = hmac_sign(payload, secret)
+    timestamp = "1710000000"
+    expected = hmac_sign(payload, timestamp, secret)
     # Re-calculate to assert correctness
     import hmac
     import hashlib
-    sig = hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
+    msg = f"{timestamp}.{payload}".encode("utf-8")
+    sig = hmac.new(secret.encode("utf-8"), msg, hashlib.sha256).hexdigest()
     assert expected == sig
 
 

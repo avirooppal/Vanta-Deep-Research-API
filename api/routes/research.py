@@ -59,6 +59,25 @@ async def get_modes():
 
 @router.post("/research", response_model=ResearchResponse, status_code=202)
 async def submit_research(body: ResearchRequest, request: Request):
+    from core.sentinel.policy import validate_job_policy
+    from fastapi import HTTPException
+
+    provider = body.provider or (
+        getattr(request.state, "transient_backend", None) or {}
+    ).get("provider")
+
+    # Phase 4: Sentinel gate — enforced before anything else runs
+    sentinel = validate_job_policy(
+        query=body.query,
+        provider=provider,
+        requested_rounds=body.max_rounds or 3,
+    )
+    if not sentinel.allowed:
+        raise HTTPException(status_code=422, detail={"error": sentinel.reason, "code": "SENTINEL_REJECTED"})
+
+    # Use sanitized query from this point forward
+    sanitized_query = sentinel.sanitized_query
+
     job_id = f"job_{uuid.uuid4().hex[:12]}"
 
     transient_backend = getattr(request.state, "transient_backend", None)
@@ -77,12 +96,27 @@ async def submit_research(body: ResearchRequest, request: Request):
     metadata = body.metadata or {}
     metadata["mode"] = mode_cfg.name
 
+
     if final_backend:
         if "api_key" in final_backend and final_backend["api_key"]:
             from core.security.encryption import encrypt
-            final_backend["api_key_encrypted"] = encrypt(final_backend["api_key"]).decode("utf-8")
+            from core.security.credentials.broker import store as broker_store
+            raw_key = final_backend["api_key"]
+            # Phase 3: store in broker — plaintext never written to DB
+            cred_id = await broker_store(
+                api_key=raw_key,
+                provider=final_backend.get("provider", "openai"),
+                model=final_backend.get("model", "gpt-4o"),
+                base_url=final_backend.get("base_url", "https://api.openai.com/v1"),
+            )
+            # Also store encrypted blob in transient_backend so ARQ workers
+            # can restore the credential into their own broker instance.
+            final_backend["api_key_encrypted"] = encrypt(raw_key).decode("utf-8")
+            final_backend["credential_id"] = cred_id
             final_backend.pop("api_key", None)
+            metadata["credential_id"] = cred_id
         metadata["transient_backend"] = final_backend
+
 
     rounds = body.max_rounds if body.max_rounds else mode_cfg.default_rounds
     effective_rounds = min(rounds, mode_cfg.max_rounds_cap)
@@ -90,7 +124,8 @@ async def submit_research(body: ResearchRequest, request: Request):
     async with get_db_session() as db:
         job = ResearchJob(
             id=job_id,
-            query=body.query,
+            query=sanitized_query,   # Sentinel-sanitized, never raw user input
+
             status="queued",
             mode=mode_cfg.name,
             max_rounds=effective_rounds,

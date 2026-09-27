@@ -16,7 +16,7 @@ async def test_webhook_delivery_success(httpx_mock):
     request = httpx_mock.get_request()
     assert request is not None
     assert request.url == url
-    assert request.headers["x-signature"] == signature
+    assert request.headers["x-webhook-signature"] == signature
     assert request.content.decode("utf-8") == payload
 
 
@@ -27,17 +27,19 @@ async def test_webhook_delivery_failure_retry(httpx_mock):
     url = "https://example.com/callback"
     payload = '{"event": "test"}'
     signature = "sha256=abcdef"
+    timestamp = "1710000000"
 
     mock_redis = AsyncMock()
 
     with patch("core.queue.tasks.create_pool", return_value=mock_redis):
-        await deliver_webhook_job({}, url, payload, signature, attempt=1)
+        await deliver_webhook_job({}, url, payload, signature, timestamp=timestamp, attempt=1)
 
     mock_redis.enqueue_job.assert_called_once_with(
         "deliver_webhook_job",
         url=url,
         payload=payload,
         signature=signature,
+        timestamp=timestamp,
         attempt=2,
         _defer_by=10
     )

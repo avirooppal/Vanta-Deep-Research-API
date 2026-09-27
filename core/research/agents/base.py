@@ -23,6 +23,12 @@ class BaseAgent:
     def register_tool(self, tool):
         self.tool_registry.register(tool)
 
+    async def _complete(self, messages, complexity: str = "high", timeout: int | None = None) -> "LLMResponse":
+        """Wrapper that always injects agent_name for gateway routing."""
+        return await self.llm.complete(
+            messages, complexity=complexity, timeout=timeout, agent_name=self.name
+        )
+
     async def run(self, initial_prompt: str, max_steps: int = 5) -> str:
         """
         Standard agent loop:
@@ -33,17 +39,8 @@ class BaseAgent:
         self.history.append(LLMMessage(role="user", content=initial_prompt))
         
         for step in range(max_steps):
-            response = await self.llm.complete(self.history)
+            response = await self._complete(self.history)
             self.history.append(LLMMessage(role="assistant", content=response.content))
-            
-            # Simple heuristic for tool usage vs final answer:
-            # If the response contains a tool call format, execute it.
-            # For simplicity in this base implementation, we assume if the agent
-            # doesn't use a tool, it has provided its final answer.
-            # In a full implementation, you'd parse function calls/JSON here.
-            
-            # For now, we just return the raw text if no standard tool syntax is found.
-            # (Subclasses can override this run loop for specialized extraction logic).
             return response.content
             
         return "Max steps reached without a final answer."
@@ -51,3 +48,4 @@ class BaseAgent:
     async def publish(self, topic: str, payload: dict):
         payload["sender"] = self.name
         await self.bus.publish(topic, payload)
+

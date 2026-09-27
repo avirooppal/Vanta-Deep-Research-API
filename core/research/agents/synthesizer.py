@@ -9,12 +9,16 @@ from dataclasses import dataclass
 # Data model
 # ---------------------------------------------------------------------------
 
+from dataclasses import dataclass, field
+
 @dataclass
 class ReportOutput:
     query: str
     summary: str
     body_md: str
     citations: list[dict]
+    warnings: list[str] = field(default_factory=list)
+    status: str = "completed"
 
 
 # ---------------------------------------------------------------------------
@@ -40,24 +44,21 @@ Keep source URLs as inline citations where relevant.
 Write only the updated report — no preamble or meta-commentary."""
 
 FINAL_REPORT_PROMPT = """\
-Write a **long, detailed, comprehensive** research report answering this question:
+Write a **deep, rigorous, comprehensive, and well-organized** research report answering this question:
 
 **Question:** {question}
 
-**All collected evidence and analysis:**
+**All collected evidence, claims, and analysis:**
 {report}
 
-Requirements:
-- Write at MINIMUM 1500 words — this should be a thorough, magazine-quality article
-- Use clear ## headings and ### subheadings to organize into logical sections
-- Each section should have multiple detailed paragraphs, not just bullet points
-- Synthesize and analyze the information — explain WHY things matter, draw comparisons, provide context
-- Include specific data points, numbers, and statistics from the evidence
-- Include source URLs as inline citations [like this](url)
-- Note where sources agree and where they disagree
-- Add a brief executive summary at the top
-- End with a clear conclusion that directly answers the question
-- Write in an engaging, informative style — not dry or robotic"""
+Writing Guidelines & Standards:
+- SEPARATE EVIDENCE FROM INFERENCE: Sourced external facts must be clearly distinguished from conclusions or speculation.
+- PARAGRAPH CONSTRUCTION: Follow analytical discipline: CLAIM -> EVIDENCE -> INTERPRETATION -> QUALIFICATION.
+- AVOID EMPTY FILLER: Strictly avoid generic AI fluff ("It is important to note", "In today's rapidly evolving landscape", marketing praise).
+- QUANTITATIVE TABLES: Where comparing entities, metrics, timelines, or tradeoffs, include clear Markdown tables.
+- COUNTEREVIDENCE & UNCERTAINTIES: Explicitly present disagreeing views, bottlenecks, caveats, and what remains unknown.
+- CITATIONS: Ground every verifiable factual statement with inline citations using source URLs [like this](url).
+- Add a direct, findings-first executive summary at the top and finish with an integrated conclusion answering the prompt directly."""
 
 EXPAND_PROMPT = """\
 This report is too brief. Please expand it significantly:
@@ -128,10 +129,8 @@ class SynthesizerAgent(BaseAgent):
         )
 
         try:
-            response = await self.llm.complete(
+            response = await self._complete(
                 [LLMMessage(role="user", content=prompt)],
-                # Synthesis is a heavy generation call; 180s matches Odysseus to avoid
-                # mid-stream timeouts on slow local models (#Odysseus-inspired)
                 timeout=180,
             )
             updated = response.content.strip()
@@ -163,7 +162,7 @@ class SynthesizerAgent(BaseAgent):
                 LLMMessage(role="system", content=system_prompt),
                 LLMMessage(role="user", content=f"Research question: {state.question}\n\nFindings:\n{findings_text}"),
             ]
-            response = await self.llm.complete(messages)
+            response = await self._complete(messages)
             body_md = response.content.strip()
         else:
             # Standard final report generation
@@ -202,8 +201,13 @@ class SynthesizerAgent(BaseAgent):
         if category and category in CATEGORY_PROMPTS:
             prompt += "\n\n" + CATEGORY_PROMPTS[category]
 
+        # Inject structured report plan outline if available
+        report_plan = getattr(state, "report_plan", None)
+        if report_plan and hasattr(report_plan, "to_outline_prompt"):
+            prompt += "\n\n" + report_plan.to_outline_prompt()
+
         try:
-            response = await self.llm.complete(
+            response = await self._complete(
                 [LLMMessage(role="user", content=prompt)],
                 timeout=180,  # heavy generation — matches Odysseus
             )
@@ -211,7 +215,7 @@ class SynthesizerAgent(BaseAgent):
 
             # Expand-retry only if very short AND not a low-context provider
             if len(result.split()) < 250:  # was 400 — less aggressive expand retry
-                expand_response = await self.llm.complete([
+                expand_response = await self._complete([
                     LLMMessage(role="user", content=prompt),
                     LLMMessage(role="assistant", content=result),
                     LLMMessage(role="user", content=EXPAND_PROMPT),

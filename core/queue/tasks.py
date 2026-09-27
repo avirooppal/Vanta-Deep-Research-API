@@ -76,32 +76,50 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             job.status = "running"
             job.started_at = datetime.now(timezone.utc)
 
-            # Load transient backend from metadata
-            if job.metadata_json:
-                try:
-                    meta = json.loads(job.metadata_json)
-                    tb = meta.get("transient_backend")
-                    if tb:
-                        from core.security.encryption import decrypt
-                        from core.llm.types import LLMConfig
-                        enc_key = tb.get("api_key_encrypted")
-                        if enc_key:
-                            if isinstance(enc_key, str):
-                                enc_key = enc_key.encode("utf-8")
-                            api_key = decrypt(enc_key)
-                        else:
-                            api_key = None
-
-                        config = LLMConfig(
-                            provider=tb.get("provider", "openai"),
-                            base_url=tb.get("base_url", "https://api.openai.com/v1"),
-                            api_key=api_key,
-                            model=tb.get("model", "gpt-4o"),
-                            max_concurrent=3
-                        )
-                        llm = LLMClient(config)
-                except Exception as e:
-                    logger.error(f"Failed to load transient backend: {e}")
+            # Load transient backend from metadata -- Phase 3
+            # Worker restores encrypted blob into broker; plaintext resolved in gateway only.
+            if job.metadata_json:
+                try:
+                    meta = json.loads(job.metadata_json)
+                    tb = meta.get("transient_backend")
+                    if tb:
+                        from core.llm.types import LLMConfig
+                        from core.security.credentials.broker import restore_from_encrypted_blob
+                        cred_id = meta.get("credential_id") or tb.get("credential_id")
+                        enc_key = tb.get("api_key_encrypted")
+                        if cred_id and enc_key:
+                            enc_bytes = enc_key.encode("utf-8") if isinstance(enc_key, str) else enc_key
+                            await restore_from_encrypted_blob(
+                                credential_id=cred_id,
+                                encrypted_bytes=enc_bytes,
+                                provider=tb.get("provider", "openai"),
+                                model=tb.get("model", "gpt-4o"),
+                                base_url=tb.get("base_url", "https://api.openai.com/v1"),
+                            )
+                            config = LLMConfig(
+                                provider=tb.get("provider", "openai"),
+                                base_url=tb.get("base_url", "https://api.openai.com/v1"),
+                                api_key=None,
+                                model=tb.get("model", "gpt-4o"),
+                                max_concurrent=3,
+                            )
+                            llm = LLMClient(config, credential_id=cred_id, job_id=job_id)
+                        elif enc_key:
+                            from core.security.encryption import decrypt
+                            from core.llm.client import _derive_cred_id
+                            enc_bytes = enc_key.encode("utf-8") if isinstance(enc_key, str) else enc_key
+                            api_key = decrypt(enc_bytes)
+                            config = LLMConfig(
+                                provider=tb.get("provider", "openai"),
+                                base_url=tb.get("base_url", "https://api.openai.com/v1"),
+                                api_key=api_key,
+                                model=tb.get("model", "gpt-4o"),
+                                max_concurrent=3,
+                            )
+                            cred_id = _derive_cred_id(config)
+                            llm = LLMClient(config, credential_id=cred_id, job_id=job_id)
+                except Exception as e:
+                    logger.error(f"Failed to load transient backend: {e}")
 
             if not llm:
                 job.status = "failed"
@@ -147,9 +165,20 @@ async def run_research_job(ctx: dict, job_id: str) -> None:
             db.add(report)
 
             job_row = await db.get(ResearchJob, job_id)
-            job_row.status = "completed"
+            final_status = getattr(report_output, "status", "completed")
+            job_row.status = final_status
             job_row.progress_pct = 100
             job_row.finished_at = datetime.now(timezone.utc)
+
+            warnings = getattr(report_output, "warnings", [])
+            if warnings:
+                try:
+                    meta = json.loads(job_row.metadata_json or "{}")
+                    meta["warnings"] = warnings
+                    job_row.metadata_json = json.dumps(meta)
+                except Exception:
+                    pass
+
             if not report_output.citations and "No findings" in (report_output.summary or ""):
                 job_row.error = "No findings gathered. Search returned dry or model was rate-limited."
 

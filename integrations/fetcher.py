@@ -4,6 +4,7 @@ import logging
 import re
 import socket
 from dataclasses import dataclass
+from typing import Optional
 from urllib.parse import urlparse
 import httpx
 from core.llm.http import get_http_client
@@ -111,13 +112,34 @@ async def _fetch_with_playwright(url: str) -> tuple[str, str]:
             await browser.close()
 
 
-async def fetch_url(url: str) -> FetchedPage:
-    """Fetch webpage with fast HTTP path, falling back to Playwright only for JS SPAs."""
+async def fetch_url(
+    url: str,
+    url_policy: "Optional[dict]" = None,
+) -> FetchedPage:
+    """Fetch webpage with fast HTTP path, falling back to Playwright only for JS SPAs.
+
+    url_policy (optional): dict with keys 'allowed_domains' and/or 'denied_domains'
+    as sets of strings. Passed from the engine when the job has custom domain policy.
+    """
+    # Phase 4: Sentinel URL policy check (before any network I/O)
+    try:
+        from core.sentinel.policy import check_url_policy
+        allowed = (url_policy or {}).get("allowed_domains")
+        denied = (url_policy or {}).get("denied_domains")
+        verdict = check_url_policy(url, allowed_domains=allowed, denied_domains=denied)
+        if not verdict.allowed:
+            logger.info("Sentinel URL policy blocked: %s — %s", url, verdict.reason)
+            return FetchedPage(url=url, title="", text="", success=False, error=f"URL policy: {verdict.reason}")
+    except Exception as exc:
+        logger.warning("Sentinel URL check error for %s: %s", url, exc)
+
+    # Existing SSRF check (kept as second line of defence)
     try:
         if not _is_safe_url(url):
             raise ValueError("Unsafe URL: blocked by SSRF protection.")
     except ValueError as e:
         return FetchedPage(url=url, title="", text="", success=False, error=str(e))
+
 
     headers = {
         "User-Agent": FETCH_USER_AGENT,

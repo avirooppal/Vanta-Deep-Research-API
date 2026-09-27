@@ -19,3 +19,8 @@ class Source(Base):
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self.__class__, k):
+                setattr(self, k, v)

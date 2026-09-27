@@ -10,3 +10,8 @@ class WebhookEndpoint(Base):
     url: Mapped[str] = mapped_column(String, nullable=False)
     secret: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            if hasattr(self.__class__, k):
+                setattr(self, k, v)

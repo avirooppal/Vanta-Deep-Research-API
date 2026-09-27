@@ -87,12 +87,17 @@ Given a natural language query, Vanta autonomously executes a **multi-round, mul
 
 ---
 
-## Key Features
-
 | Feature | Description | Status |
 |---|---|---|
-| **Multi-Agent Pipeline** | 7-agent loop: Coordinator → Search → Validator → Extractor → Contradiction → Synthesizer → CitationVerifier | ✅ Stable |
+| **Deep Research Engine** | 15-stage pipeline: Understand → Plan → Multi-Family Search → Read → Validate → Atomic Claims → Contradictions → Challenge → Gap Analysis → Evidence Audit → Report Plan → Synthesize → Claim Verify → Citation Entailment → Edit → Quality Gate | ✅ Production |
 | **Bring Your Own Key (BYOK)** | Pass `sk-...`, `sk-ant-...`, `AIza...`, or `sk-or-...` keys as Bearer token; provider auto-detected | ✅ Stable |
+| **Credential Broker** | Zero-trust in-memory key isolation; ephemeral decryption only in gateway dispatch; encrypted at rest | ✅ Production |
+| **Resilient LLM Gateway** | Circuit breaker, per-credential token/request rate limiter, and automatic fallback | ✅ Production |
+| **Token & Request Budgeting** | Pre-allocated token/request reserves; early exploration throttling protecting report finalization | ✅ Production |
+| **Sentinel Security Pipeline** | Sanitizes untrusted web content before LLM context injection; tracks SHA-256 data provenance | ✅ Production |
+| **Atomic Evidence Graph** | Typed claims (FACT, MEASUREMENT, ANNOUNCEMENT, FORECAST) with quantitative normalization | ✅ Production |
+| **Adversarial Falsification** | ChallengeAgent attacks emerging conclusions and flags single-source dependencies | ✅ Production |
+| **Citation Entailment Checking** | Verifies inline citations for semantic entailment, bounds safety, and deduplication | ✅ Production |
 | **Persistent Knowledge Graph** | Extracted claims embedded with pgvector; searchable across all past sessions | ✅ Stable |
 | **Server-Sent Events (SSE)** | Stream live progress (percent, source count, status) to any client | ✅ Stable |
 | **Multi-Format Export** | Export reports as Markdown, JSON, or PDF (via WeasyPrint) | ✅ Stable |
@@ -231,47 +236,59 @@ graph LR
 
 ## The Multi-Agent Pipeline
 
-Vanta's core is a **7-agent sequential pipeline** instantiated fresh per research job. All agents receive the same shared `ResearchState` object and communicate through an in-memory message bus.
+Vanta features a **15-stage deep research pipeline** designed to separate empirical **EVIDENCE** from logical **INFERENCE** and analytical **SYNTHESIS**. It executes an adversarial, hypothesis-driven loop before generating structured, audit-verified research reports.
 
 ```mermaid
 flowchart TD
     Start(["POST /v1/research<br/>job queued"])
-    C["🎯 CoordinatorAgent<br/>Decides: CONTINUE or SYNTHESIZE<br/>based on round count & findings quality"]
-    S["🔍 SearchAgent<br/>Generates semantic + keyword sub-queries<br/>to fill knowledge gaps"]
-    SX["SearXNG / Brave / Tavily<br/>Returns URLs + snippets"]
-    V["✅ ValidatorAgent<br/>Assigns trust_score 0–100<br/>Flags: paywalled, opinion, low-quality"]
-    E["⛏️ ExtractorAgent<br/>Pulls structured Claim objects<br/>Checks for overlap with MemoryStore"]
-    PG[("PostgreSQL<br/>Source + Claim rows written<br/>after each round")]
-    CON["⚡ ContradictionAgent<br/>Scans all findings for conflicts<br/>Assigns severity + resolution_suggestion"]
-    SYN["📝 SynthesizerAgent<br/>Compiles full Markdown report<br/>Injects citation markers inline"]
-    CIT["📎 CitationVerifierAgent<br/>Validates [1], [2] markers<br/>Fixes broken citation references"]
+    U["1. 🧠 QuestionUnderstandingAgent<br/>Creates ResearchBrief (16 QuestionTypes, entities, bounds)"]
+    P["2. 📋 ResearchPlannerAgent<br/>Decomposes into Hypotheses & SearchTracks"]
+    C["3. 🎯 CoordinatorAgent<br/>Track-aware orchestration & depth evaluation"]
+
+    subgraph ResearchLoop["Iterative Research Loop"]
+        S["4. 🔍 SearchAgent<br/>Multi-family queries + Jaccard novelty filter"]
+        SX["5. 🌐 SearXNG / Discovery<br/>Multi-source URL retrieval"]
+        F["6. 📄 Fetcher & Sentinel Sanitizer<br/>HTML fetch + Prompt-injection sanitization + SHA-256 provenance"]
+        V["7. ✅ ValidatorAgent<br/>Multidimensional SourceQuality & SourceLineage"]
+        E["8. ⛏️ ExtractorAgent<br/>Atomic Claims (Fact/Forecast/Announcement) + QuantitativeFacts"]
+        CON["9. ⚡ ContradictionAgent<br/>Diagnoses definitional vs temporal vs numerical clashes"]
+        CH["10. 🥊 ChallengeAgent (Devil's Advocate)<br/>Falsification & single-source dependency audit"]
+    end
+
+    AUD["11. 📊 EvidenceAudit & ReportPlanner<br/>Validates claim coverage & generates structured section plan"]
+    SYN["12. 📝 SynthesizerAgent<br/>Plans & writes report (Claim → Evidence → Inference → Nuance)"]
+    CLM["13. 🛡️ ClaimVerifierAgent<br/>Audits conclusions against atomic evidence graph"]
+    CIT["14. 📎 CitationVerifierAgent<br/>Bounds check, syntax deduplication & lexical entailment screening"]
+    EDT["15. ✍️ EditorAgent & FinalQualityGate<br/>Prunes filler phrases & scores 5-point quality standard"]
     End(["ReportOutput returned<br/>to ARQ worker"])
 
-    Start --> C
+    Start --> U --> P --> C
     C -- "CONTINUE" --> S
-    S --> SX
-    SX --> V
-    V -- "trust_score ≥ 30" --> E
-    V -- "trust_score < 30" --> discard["🗑️ Discarded"]
-    E --> PG
-    E --> CON
-    CON --> C
-    C -- "SYNTHESIZE" --> SYN
-    SYN --> CIT
-    CIT --> End
+    S --> SX --> F --> V
+    V -- "trust_score ≥ min_trust" --> E
+    V -- "untrusted / paywalled" --> discard["🗑️ Discarded"]
+    E --> CON --> CH --> C
+    C -- "SYNTHESIZE" --> AUD --> SYN --> CLM --> CIT --> EDT --> End
 ```
 
 ### Agent Specifications
 
-| Agent | File | Role | Key Decision |
+| Agent / Stage | Module | Role | Key Output / Decision |
 |---|---|---|---|
-| **CoordinatorAgent** | `agents/coordinator.py` | Orchestration control loop | `CONTINUE` vs `SYNTHESIZE` — uses LLM when findings exist, rule-based when round limit reached |
-| **SearchAgent** | `agents/search.py` | Query generation | Generates multiple semantic and keyword sub-queries targeting knowledge gaps |
-| **ValidatorAgent** | `agents/validator.py` | Source quality gate | Assigns `trust_score` 0–100; sources below 30 are dropped before extraction |
-| **ExtractorAgent** | `agents/extractor.py` | Structured fact extraction | Extracts `Finding` objects; cross-references `MemoryStore` to avoid duplicate claims |
-| **ContradictionAgent** | `agents/contradiction.py` | Conflict detection | Compares all findings; produces `Contradiction` objects with severity (`low`/`medium`/`high`) and resolution suggestions |
-| **SynthesizerAgent** | `agents/synthesizer.py` | Report generation | Merges all findings into a structured Markdown report with inline `[1]`, `[2]` citations |
-| **CitationVerifierAgent** | `agents/citation_verifier.py` | Citation integrity | Validates and repairs inline citation markers to prevent hallucinated references |
+| **QuestionUnderstanding** | `planning/brief.py` | Inquiry decomposition & scope definition | `ResearchBrief` with `QuestionType`, entities, geographic/time scope, and sub-questions |
+| **ResearchPlanner** | `planning/plan.py` | Hypothesis & search track blueprinting | `ResearchPlan` with competing hypotheses, `SearchTrack`s, and stopping conditions |
+| **CoordinatorAgent** | `agents/coordinator.py` | Orchestration & track coverage loop | Evaluates evidence depth across tracks; decides `CONTINUE` vs `SYNTHESIZE` |
+| **SearchAgent** | `agents/search.py` | Multi-family query generation | Emits broad, primary, academic, skeptical, and quantitative queries with Jaccard novelty filtering |
+| **ValidatorAgent** | `agents/validator.py` | Multidimensional source scoring | `SourceQuality` (composite authority, methodology, bias risk) & `SourceLineage` (PR/wire syndication) |
+| **ExtractorAgent** | `agents/extractor.py` | Atomic claim & metric extraction | `AtomicClaim`s categorized into `FACT`, `MEASUREMENT`, `ANNOUNCEMENT`, `FORECAST` + `QuantitativeFact`s |
+| **ContradictionAgent** | `agents/contradiction.py` | Conflict root-cause classification | Classifies clashes into `DEFINITION_DIFFERENCE`, `TEMPORAL_DISAGREEMENT`, `NUMERICAL_DISAGREEMENT`, etc. |
+| **ChallengeAgent** | `agents/challenge.py` | Adversarial falsification | Flags unverified PR claims, single-source dependencies, and seeds counterevidence queries |
+| **EvidenceAudit & ReportPlanner** | `synthesis/planner.py` | Pre-synthesis vetting & outline | Generates `EvidenceAuditResult` and structured `ReportPlan` with section objectives & comparison tables |
+| **SynthesizerAgent** | `agents/synthesizer.py` | High-density report generation | Synthesizes claims into professional research prose strictly separating evidence from inference |
+| **ClaimVerifierAgent** | `agents/claim_verifier.py` | Ground-truth verification | Audits report conclusions against the extracted atomic claims to prevent hallucination |
+| **CitationVerifierAgent** | `agents/citation_verifier.py` | Citation entailment & syntax integrity | Collapses duplicates, strips invalid markers, and verifies lexical overlap between claims and sources |
+| **EditorAgent** | `agents/editor.py` | Information density & flow | Prunes generic AI filler phrases while preserving all quantitative data, qualifications, and citation brackets |
+| **FinalQualityGate** | `quality/gate.py` | Pre-release quality scoring | Scores 5 dimensions: question relevance, substantive depth, citation density, contradiction handling, uncertainty |
 
 ---
 

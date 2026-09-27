@@ -6,6 +6,7 @@ from typing import Callable, Awaitable
 
 from core.llm.client import LLMClient
 from core.llm.types import Message as LLMMessage
+from core.llm.budget import ResearchBudget
 from core.research.state import ResearchState, ValidatedSource, Finding
 from core.research.agents.coordinator import CoordinatorAgent
 from core.research.agents.search import SearchAgent
@@ -120,7 +121,14 @@ async def run_research(
         max_rounds=effective_rounds,
         mode=mode_config.name,
         mode_config=mode_config,
+        budget=ResearchBudget.unlimited(),
     )
+    # Wire budget into the LLM client so every call auto-records token usage
+    attach_fn = getattr(llm, "attach_budget", None)
+    if callable(attach_fn):
+        res = attach_fn(state.budget)
+        if asyncio.iscoroutine(res):
+            res.close()
     sem = asyncio.Semaphore(settings.extraction_concurrency)
 
     from core.research.memory import MemoryStore
@@ -134,19 +142,24 @@ async def run_research(
     validator_agent = ValidatorAgent(llm)
     extractor_agent = ExtractorAgent(llm)
     contradiction_agent = ContradictionAgent(llm)
+    from core.research.agents.challenge import ChallengeAgent
+    challenge_agent = ChallengeAgent(llm)
     synthesizer_agent = SynthesizerAgent(llm)
     citation_verifier_agent = CitationVerifierAgent(llm)
 
     # -----------------------------------------------------------------------
-    # PLAN: analyze question, create research strategy
+    # PLAN: analyze question, create structured ResearchBrief and ResearchPlan
     # -----------------------------------------------------------------------
-    state.research_plan = await _create_plan(question, llm)
-    logger.info(f"Research plan: {state.research_plan[:200]}")
+    from core.research.planning.brief import understand_question
+    from core.research.planning.plan import create_research_plan
 
-    # Auto-detect category (fast, one-shot, low cost)
-    state.category = await _classify_category(question, llm)
-    if state.category:
-        logger.info(f"Auto-detected category: {state.category}")
+    state.brief = await understand_question(question, llm)
+    state.plan = await create_research_plan(state.brief, llm)
+    state.research_plan = state.plan.to_text_summary()
+    logger.info(f"Structured Research Plan created with {len(state.plan.search_tracks)} tracks.")
+
+    # Category from brief
+    state.category = state.brief.question_type.value
 
     # -----------------------------------------------------------------------
     # Research loop
@@ -160,6 +173,14 @@ async def run_research(
 
         # Hard stop on round count
         if state.current_round > state.max_rounds:
+            break
+
+        # Budget: stop exploring if finalization reserve is threatened
+        if state.budget and state.budget.should_stop_exploring():
+            logger.info(
+                "Budget reserve triggered at round %d — stopping exploration. %s",
+                state.current_round, state.budget.summary()
+            )
             break
 
         # 1. Coordinator decides next step (round-count guard + quick sanity check)
@@ -196,7 +217,15 @@ async def run_research(
                     return None
                 llm.sources_fetched += 1
 
+                from core.security.content_sanitizer import sanitize_external_content
+                sanitized_text, provenance = sanitize_external_content(
+                    page.text, source_url=url, job_id=job_id, trust_score=getattr(page, "trust_score", 50)
+                )
+                page.text = sanitized_text
+
                 validated_source = await validator_agent.run(page)
+                validated_source.provenance = provenance.to_dict()
+                validated_source.data_label = provenance.data_label.value
                 if validated_source.trust_score < mode_config.min_trust_score:
                     return None
 
@@ -215,6 +244,10 @@ async def run_research(
                 source, findings = r
                 new_sources.append(source)
                 new_findings.extend(findings)
+                for f in findings:
+                    claim_obj = getattr(f, "atomic_claim", None)
+                    if claim_obj is not None:
+                        state.claims.append(claim_obj)
 
         state.sources.extend(new_sources)
         state.findings.extend(new_findings)
@@ -242,10 +275,26 @@ async def run_research(
             window_findings = new_findings[-synthesis_window:]
             state.evolving_report = await synthesizer_agent.synthesize_round(state, window_findings)
 
-        # 6. Contradiction detection
-        state.contradictions = await contradiction_agent.run(state)
+        # 6. Contradiction detection (graceful degradation)
+        try:
+            state.contradictions = await contradiction_agent.run(state)
+        except Exception as exc:
+            logger.warning(f"Contradiction detection failed (non-fatal): {exc}")
+            state.warnings.append(f"Contradiction detection failed in round {state.current_round}: {exc}")
 
-        # 7. Progress callback
+        # 7. Challenge / Devil's Advocate stage (falsification & counterevidence)
+        try:
+            new_challenges = await challenge_agent.run(state)
+            if new_challenges:
+                state.challenges.extend(new_challenges)
+                # Seed suggested investigation query into next search round
+                for ch in new_challenges:
+                    if ch.suggested_investigation_query and ch.suggested_investigation_query not in state.queries_used:
+                        state.queries.append(ch.suggested_investigation_query)
+        except Exception as exc:
+            logger.warning(f"ChallengeAgent failed (non-fatal): {exc}")
+
+        # 7. Progress callback — include budget info
         await on_progress(RoundResult(
             round_number=state.current_round,
             new_findings=new_findings,
@@ -290,6 +339,7 @@ async def run_research(
             len(state.findings),
         )
         fallback_body = _fallback_report(question, state.findings)
+        warnings = list(state.warnings) + ["Synthesis produced no evolving report; compiling fallback from findings"]
         return ReportOutput(
             query=question,
             summary=f"Research completed with {len(state.findings)} findings (synthesis timed out).",
@@ -298,10 +348,78 @@ async def run_research(
                 {"id": f"src_{i+1}", "url": f.url, "title": f.title}
                 for i, f in enumerate(state.findings)
             ],
+            warnings=warnings,
+            status="completed_with_warnings",
         )
 
-    report = await synthesizer_agent.run(state)
-    report = await citation_verifier_agent.run(state, report)
+    # Pre-synthesis: Evidence Audit and Structured Report Planning
+    try:
+        from core.research.synthesis.planner import audit_evidence, create_report_plan
+        audit_result = audit_evidence(state)
+        state.report_plan = await create_report_plan(state, audit_result, llm)
+    except Exception as exc:
+        logger.warning(f"Evidence audit/report planning failed (non-fatal): {exc}")
+
+    try:
+        report = await synthesizer_agent.run(state)
+    except Exception as exc:
+        logger.warning(f"Final synthesis failed; compiling fallback report: {exc}")
+        state.warnings.append(f"Synthesizer failed: {exc}; fallback report generated")
+        fallback_body = _fallback_report(question, state.findings)
+        report = ReportOutput(
+            query=question,
+            summary=f"Research completed with {len(state.findings)} findings (synthesis failed).",
+            body_md=fallback_body,
+            citations=[
+                {"id": f"src_{i+1}", "url": f.url, "title": f.title}
+                for i, f in enumerate(state.findings)
+            ],
+            warnings=list(state.warnings),
+            status="completed_with_warnings",
+        )
+
+    # Claim verification (audit against atomic claims & findings)
+    try:
+        from core.research.agents.claim_verifier import ClaimVerifierAgent
+        claim_verifier = ClaimVerifierAgent(llm)
+        await claim_verifier.run(state, report)
+    except Exception as exc:
+        logger.warning(f"Claim verification failed (non-fatal): {exc}")
+
+    # Citation entailment & syntax verification
+    try:
+        report = await citation_verifier_agent.run(state, report)
+    except Exception as exc:
+        logger.warning(f"Citation verification failed (non-fatal): {exc}")
+        state.warnings.append(f"Citation verification failed: {exc}")
+        if hasattr(report, "status"):
+            report.status = "completed_with_warnings"
+
+    # Final editing (density, flow, redundancy reduction, citation preservation)
+    try:
+        from core.research.agents.editor import EditorAgent
+        editor = EditorAgent(llm)
+        report = await editor.run(state, report)
+    except Exception as exc:
+        logger.warning(f"EditorAgent failed (non-fatal): {exc}")
+
+    # Final Quality Gate evaluation
+    try:
+        from core.research.quality.gate import evaluate_quality_gate
+        gate_result = evaluate_quality_gate(state, report)
+        if not gate_result.passed:
+            for issue in gate_result.issues:
+                if issue not in state.warnings:
+                    state.warnings.append(f"QualityGate: {issue}")
+    except Exception as exc:
+        logger.warning(f"Final quality gate evaluation failed (non-fatal): {exc}")
+
+    if state.warnings and hasattr(report, "warnings"):
+        for w in state.warnings:
+            if w not in report.warnings:
+                report.warnings.append(w)
+        if report.warnings and getattr(report, "status", "") == "completed":
+            report.status = "completed_with_warnings"
 
     return report
 
@@ -343,6 +461,7 @@ async def _create_plan(question: str, llm: LLMClient) -> str:
         response = await llm.complete(
             [LLMMessage(role="user", content=prompt)],
             complexity="low",
+            agent_name="CoordinatorAgent",
         )
         text = strip_thinking(response.content) or ""
         # Parse JSON plan
@@ -377,6 +496,7 @@ async def _classify_category(question: str, llm: LLMClient) -> str | None:
         response = await llm.complete(
             [LLMMessage(role="user", content=prompt)],
             complexity="low",
+            agent_name="CoordinatorAgent",
         )
         cat = (strip_thinking(response.content) or "").strip().lower()
         # Clean up and match
@@ -414,6 +534,7 @@ async def _should_stop(
         response = await llm.complete(
             [LLMMessage(role="user", content=prompt)],
             complexity="low",
+            agent_name="CoordinatorAgent",
         )
         clean = strip_thinking(response.content or "").strip()
         # Tolerate "**YES**", "Yes.", etc.
