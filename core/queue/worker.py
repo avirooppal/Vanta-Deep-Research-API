@@ -7,11 +7,13 @@ from core.config import settings
 
 def get_redis_settings() -> RedisSettings:
     parsed = urlparse(settings.redis_url)
+    is_ssl = parsed.scheme in ("rediss",) or "upstash.io" in (parsed.hostname or "")
     return RedisSettings(
         host=parsed.hostname or "localhost",
         port=parsed.port or 6379,
         database=int(parsed.path.lstrip("/") or 0),
         password=parsed.password,
+        ssl=is_ssl,
     )
 
 

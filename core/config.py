@@ -30,10 +30,24 @@ class Settings(BaseSettings):
     def normalize_database_url(cls, v: str) -> str:
         """Normalize cloud provider database URLs (postgres://, postgresql://) to asyncpg driver."""
         if isinstance(v, str):
+            v = v.strip()
+            # Clean up accidental spaces like postgres: password@...
+            v = v.replace("postgres: ", "postgres:").replace("postgresql: ", "postgresql:")
             if v.startswith("postgres://"):
                 v = v.replace("postgres://", "postgresql+asyncpg://", 1)
             elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
                 v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
+    @field_validator("redis_url", mode="before")
+    @classmethod
+    def normalize_redis_url(cls, v: str) -> str:
+        """Ensure TLS (rediss://) for cloud Redis providers like Upstash."""
+        if isinstance(v, str):
+            v = v.strip()
+            # Upstash requires TLS on port 6379
+            if "upstash.io" in v and v.startswith("redis://"):
+                v = v.replace("redis://", "rediss://", 1)
         return v
 
     class Config:
