@@ -1448,33 +1448,101 @@ OpenTelemetry integration is on the roadmap. The `X-Request-ID` header provides 
 
 ---
 
-## Deployment Architecture
+## Deployment Architecture: Cloud vs. Local
 
-### Local / Development
+Vanta is engineered with clear architectural separation between **Local Development** and **Cloud Production** environments.
 
-```mermaid
-flowchart TD
-    Browser["Browser / curl / CLI"] --> Caddy["Caddy :80"]
-    Caddy --> API["FastAPI :8000"]
-    API --> PG[("PostgreSQL :5433\n(pgvector/pgvector:pg16)")]
-    API --> Redis[("Redis :6379")]
-    Redis --> Worker["ARQ Worker"]
-    Worker --> PG
-    Worker --> SearXNG["SearXNG :8085"]
+### Cloud vs. Local Architecture Comparison
+
+| Dimension | Local Deployment | Cloud Deployment (Production) |
+|---|---|---|
+| **Host & Endpoint** | `http://localhost:8000` (or Docker port mapping) | Public HTTPS (e.g. `https://api.vanta.yourdomain.com` or Railway/Render URL) |
+| **Port Binding** | Fixed port `8000` | Dynamic `$PORT` binding (auto-assigned by cloud provider) |
+| **Reverse Proxy & SSL** | Plain HTTP / optional local Caddy | Automatic Let's Encrypt TLS (Caddy, Cloudflare, or Cloud Load Balancer) |
+| **Database** | Local Docker `pgvector/pgvector:pg16` container | Managed Cloud PostgreSQL with pgvector (Supabase, Neon, AWS RDS, Railway) |
+| **Queue / Redis** | Local Docker `redis:7-alpine` container | Managed Cloud Redis (Upstash, Railway Redis, Render Redis, Redis Cloud) |
+| **Worker Process** | Dedicated ARQ container or process | Standalone ARQ service OR unified single-container mode (`SINGLE_CONTAINER_MODE=true`) |
+| **Web Search** | Local SearXNG container (`http://searxng:8080`) | Self-hosted SearXNG container or public SearXNG / Tavily / Brave API |
+| **Frontend Connection** | Connects to `http://localhost:8000` | Hosted Vercel frontend (`https://vanta-hazel.vercel.app`) connects directly over HTTPS |
+
+---
+
+### 1. Local Deployment
+
+For running entirely on your local machine with full Docker infrastructure:
+
+```bash
+# 1. Clone & copy local env
+git clone https://github.com/avirooppal/Vanta-Deep-Research-API.git
+cd Vanta-Deep-Research-API
+cp .env.example .env
+
+# 2. Start full local stack (Postgres, Redis, SearXNG, API, Worker)
+docker compose -f deploy/docker-compose.yml up -d --build
+
+# 3. Or run API directly with uv:
+uv run uvicorn api.app:app --port 8000 --reload
 ```
 
-### Production (Kubernetes — Planned)
+---
 
-```mermaid
-flowchart TD
-    Internet --> Ingress["Kubernetes Ingress\n(NGINX / Traefik)"]
-    Ingress --> APIDeployment["api Deployment\n(3+ replicas, HPA)"]
-    APIDeployment --> PGStateful[("postgres StatefulSet\n(+ read replicas)")]
-    APIDeployment --> RedisStateful[("redis StatefulSet\n(Sentinel mode)")]
-    RedisStateful --> WorkerDeployment["worker Deployment\n(auto-scale on queue depth)"]
-    WorkerDeployment --> PGStateful
-    WorkerDeployment --> SearXNGDeploy["searxng Deployment"]
+### 2. Cloud Deployment
+
+For deploying the backend to the cloud so remote clients and the hosted Vercel frontend can access it anywhere:
+
+#### Option A: Railway (Recommended 1-Click)
+1. Fork or push this repository to GitHub.
+2. In Railway, click **New Project** → **Deploy from GitHub repo**.
+3. Railway automatically detects `railway.json` and `Procfile`.
+4. Add a **PostgreSQL** plugin (enable pgvector) and a **Redis** plugin from Railway.
+5. Set environment variables:
+   - `DATABASE_URL`: `${{Postgres.DATABASE_URL}}` (automatically sanitized to `postgresql+asyncpg://`)
+   - `REDIS_URL`: `${{Redis.REDIS_URL}}`
+   - `SECRET_KEY`: `<generate-with-openssl>`
+   - `SINGLE_CONTAINER_MODE`: `true` (runs both API and worker in one service)
+6. Railway assigns a public HTTPS domain (e.g., `https://vanta-backend-production.up.railway.app`).
+
+#### Option B: Render Blueprint (1-Click)
+1. In Render, select **New** → **Blueprint**.
+2. Connect your repo; Render will read `render.yaml`.
+3. It will provision:
+   - `vanta-backend` (Docker web service with embedded worker)
+   - `vanta-postgres` (PostgreSQL 16)
+   - `vanta-redis` (Redis)
+4. Click **Apply** to deploy.
+
+#### Option C: Fly.io
+1. Install Fly CLI and run:
+   ```bash
+   fly launch --config fly.toml
+   ```
+2. Attach Fly Postgres with pgvector and Upstash Redis.
+3. Deploy with:
+   ```bash
+   fly deploy
+   ```
+
+#### Option D: Self-Hosted Cloud VPS (DigitalOcean, Hetzner, AWS EC2)
+Includes automatic Let's Encrypt HTTPS via Caddy reverse proxy:
+```bash
+# 1. Copy cloud environment template
+cp deploy/env.cloud.example deploy/.env.cloud
+# Edit DOMAIN (e.g. api.yourdomain.com), ACME_EMAIL, PG_PASSWORD, REDIS_PASSWORD, SECRET_KEY
+
+# 2. Launch production stack with Caddy HTTPS
+docker compose -f deploy/docker-compose.cloud.yml --env-file deploy/.env.cloud up -d --build
 ```
+
+---
+
+### 3. Connecting Vercel Frontend to Cloud Backend
+
+Once your cloud backend is live:
+1. Open your frontend console (e.g. [https://vanta-hazel.vercel.app/console](https://vanta-hazel.vercel.app/console)).
+2. Click **Settings (⚙️)** in the prompt bar.
+3. In **Vanta Backend API URL**, paste your public cloud backend URL (e.g. `https://vanta-api.up.railway.app`).
+4. Click **Test Ping** — the status dot will turn 🟢 **Online**.
+5. Click **Save & Close**. Now all research jobs submit directly to your cloud fleet!
 
 ### Scaling Strategy
 

@@ -38,12 +38,15 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/usr/local/bin:$PATH"
+    PATH="/usr/local/bin:$PATH" \
+    PORT=8000
 
-EXPOSE 8000
+RUN chmod +x scripts/*.sh 2>/dev/null || true
 
-# Default: migrate then serve
-CMD ["sh", "-c", "python scripts/migrate.py && uvicorn api.app:app --host 0.0.0.0 --port 8000 --workers 2"]
+EXPOSE ${PORT}
+
+# Cloud & local ready entrypoint
+CMD ["sh", "scripts/start_cloud.sh"]
 
 
 # ─── Stage 3: playwright variant (PDF/screenshot features) ──────────────────
