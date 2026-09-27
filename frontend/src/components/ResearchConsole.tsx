@@ -387,12 +387,16 @@ export function ResearchConsole() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey.trim()}`,
+          ...(provider ? { "X-Provider": provider } : {}),
+          ...(baseUrl.trim() ? { "X-Base-Url": baseUrl.trim() } : {}),
+          ...(modelOverride.trim() ? { "X-Model": modelOverride.trim() } : {}),
         },
         body: JSON.stringify({
           query: query.trim(),
           mode: mode,
           max_rounds: rounds,
           provider: provider || undefined,
+          api_key: apiKey.trim(),
           base_url: baseUrl.trim() || undefined,
           model: modelOverride.trim() || undefined,
         }),

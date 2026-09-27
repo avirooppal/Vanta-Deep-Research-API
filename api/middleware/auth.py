@@ -9,6 +9,12 @@ get_db_session = None
 verify_api_key = None
 
 
+_CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Headers": "*",
+}
+
 async def auth_middleware(request: Request, call_next):
     """
     Simplified auth middleware for single-user BYOK mode.
@@ -25,6 +31,7 @@ async def auth_middleware(request: Request, call_next):
         return JSONResponse(
             status_code=401,
             content={"error": "Missing or invalid Authorization header. Pass your LLM API key as Bearer token."},
+            headers=_CORS_HEADERS,
         )
 
     presented_key = auth_header.removeprefix("Bearer ").strip()
@@ -97,6 +104,7 @@ async def auth_middleware(request: Request, call_next):
         return JSONResponse(
             status_code=401,
             content={"error": "Could not detect LLM provider from your API key. Use X-Provider header to specify."},
+            headers=_CORS_HEADERS,
         )
 
     request.state.transient_backend = {

@@ -50,17 +50,19 @@ async def private_network_middleware(request: Request, call_next):
 
 app.add_middleware(BaseHTTPMiddleware, dispatch=private_network_middleware)
 
+# Inner middlewares: audit wraps auth, auth runs before routes
+app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)
+app.add_middleware(BaseHTTPMiddleware, dispatch=audit_log_middleware)
+
+# Outermost middleware: CORSMiddleware must wrap all responses including 401/422/500
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
-
-# Middleware order: audit runs outermost (wraps auth), auth runs before routes
-app.add_middleware(BaseHTTPMiddleware, dispatch=audit_log_middleware)
-app.add_middleware(BaseHTTPMiddleware, dispatch=auth_middleware)
 
 app.include_router(health_router)
 app.include_router(research_router)
