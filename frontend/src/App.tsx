@@ -119,7 +119,7 @@ function App() {
               Fleet Active
             </span>
             <a
-              href="http://localhost:8000/docs"
+              href={`${((typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) || "http://localhost:8000").replace(/\/$/, "")}/docs`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"

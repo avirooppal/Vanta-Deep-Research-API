@@ -18,6 +18,8 @@ import {
   GraduationCap,
   Zap,
   BookOpen,
+  Server,
+  Activity,
 } from "lucide-react";
 import { marked } from "marked";
 import { CustomSelect, SelectOption } from "./ui/CustomSelect";
@@ -106,7 +108,7 @@ const STAGES = [
   { id: "verify", name: "Verifier", stageNum: "Stage 7" },
 ];
 
-const API_BASE = (
+const DEFAULT_API_BASE = (
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
   "http://localhost:8000"
 ).replace(/\/$/, "");
@@ -199,6 +201,14 @@ export function ResearchConsole() {
   const [provider, setProvider] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [modelOverride, setModelOverride] = useState("");
+  const [backendUrl, setBackendUrl] = useState<string>(() => {
+    return (
+      (typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) ||
+      DEFAULT_API_BASE
+    ).replace(/\/$/, "");
+  });
+  const [backendStatus, setBackendStatus] = useState<"checking" | "connected" | "disconnected">("checking");
+  const [backendLatency, setBackendLatency] = useState<number | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [showScopeDropdown, setShowScopeDropdown] = useState(false);
@@ -239,10 +249,14 @@ export function ResearchConsole() {
     const savedProvider = localStorage.getItem("vanta_provider");
     const savedBaseUrl = localStorage.getItem("vanta_base_url");
     const savedModel = localStorage.getItem("vanta_model_override");
+    const savedBackend = localStorage.getItem("vanta_backend_url");
     if (savedKey) setApiKey(savedKey);
     if (savedProvider) setProvider(savedProvider);
     if (savedBaseUrl) setBaseUrl(savedBaseUrl);
     if (savedModel) setModelOverride(savedModel);
+    if (savedBackend) setBackendUrl(savedBackend.replace(/\/$/, ""));
+
+    checkBackendHealth(savedBackend || backendUrl);
 
     function handleClickOutside(e: MouseEvent) {
       if (scopeDropdownRef.current && !scopeDropdownRef.current.contains(e.target as Node)) {
@@ -255,6 +269,33 @@ export function ResearchConsole() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const checkBackendHealth = async (urlToCheck?: string) => {
+    const target = (urlToCheck || backendUrl).trim().replace(/\/$/, "");
+    if (!target) return false;
+    setBackendStatus("checking");
+    const t0 = performance.now();
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(`${target}/health`, {
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        setBackendLatency(Math.round(performance.now() - t0));
+        setBackendStatus("connected");
+        return true;
+      } else {
+        setBackendStatus("disconnected");
+        return false;
+      }
+    } catch {
+      setBackendStatus("disconnected");
+      return false;
+    }
+  };
 
   const addLog = (msg: string) => {
     const time = new Date().toTimeString().split(" ")[0];
@@ -277,6 +318,7 @@ export function ResearchConsole() {
   };
 
   const saveSettings = () => {
+    localStorage.setItem("vanta_backend_url", backendUrl.trim().replace(/\/$/, ""));
     localStorage.setItem("vanta_api_key", apiKey.trim());
     localStorage.setItem("vanta_key", apiKey.trim());
     localStorage.setItem("vanta_provider", provider);
@@ -319,8 +361,9 @@ export function ResearchConsole() {
       setTimerSeconds((prev) => prev + 1);
     }, 1000);
 
+    const activeHost = backendUrl.trim().replace(/\/$/, "");
     try {
-      const res = await fetch(`${API_BASE}/v1/research`, {
+      const res = await fetch(`${activeHost}/v1/research`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -337,29 +380,52 @@ export function ResearchConsole() {
       });
 
       if (!res.ok) {
-        const err = await res.json();
+        const err = await res.json().catch(() => ({}));
         throw new Error(err.error || err.detail || `Server returned ${res.status}`);
       }
 
       const data = await res.json();
       setJobId(data.id);
       addLog(`Job queued successfully: ID ${data.id}`);
-      startPolling(data.id);
+      startPolling(data.id, activeHost);
     } catch (err: any) {
-      alert(`Launch error: ${err.message}`);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
       setLoading(false);
+
+      const isConnectionIssue =
+        err.name === "TypeError" ||
+        err.message?.includes("Failed to fetch") ||
+        err.message?.includes("NetworkError") ||
+        err.message?.includes("CONNECTION_REFUSED");
+
+      if (isConnectionIssue) {
+        setBackendStatus("disconnected");
+        addLog(`[CONNECTION REFUSED] Cannot connect to Vanta backend at: ${activeHost}`);
+        addLog(`→ Start local server: 'uv run uvicorn api.app:app --port 8000'`);
+        addLog(`→ Or open Settings (gear icon) to configure a remote or tunnel URL.`);
+        alert(
+          `Connection Failed: Cannot reach Vanta backend at:\n${activeHost}\n\n` +
+          `• If running locally: Please start your backend server in terminal:\n` +
+          `   uv run uvicorn api.app:app --port 8000 --reload\n` +
+          `   (or: docker compose -f deploy/docker-compose.yml up -d)\n\n` +
+          `• If using a remote server or tunnel (ngrok / Cloudflare / Railway):\n` +
+          `   Click the Settings button (⚙️) to update your Vanta Backend API URL.`
+        );
+      } else {
+        alert(`Launch error: ${err.message}`);
+      }
     }
   };
 
-  const startPolling = (id: string) => {
+  const startPolling = (id: string, customHost?: string) => {
+    const host = (customHost || backendUrl).trim().replace(/\/$/, "");
     let elapsed = 0;
     if (pollRef.current) clearInterval(pollRef.current);
 
     pollRef.current = setInterval(async () => {
       elapsed += 2;
       try {
-        const res = await fetch(`${API_BASE}/v1/research/${id}`, {
+        const res = await fetch(`${host}/v1/research/${id}`, {
           headers: { Authorization: `Bearer ${apiKey.trim()}` },
         });
         if (!res.ok) return;
@@ -483,7 +549,8 @@ export function ResearchConsole() {
       return;
     }
     try {
-      await fetch(`${API_BASE}/v1/research/${jobId}`, {
+      const host = backendUrl.trim().replace(/\/$/, "");
+      await fetch(`${host}/v1/research/${jobId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${apiKey.trim()}` },
       });
@@ -655,10 +722,27 @@ export function ResearchConsole() {
                 <button
                   type="button"
                   onClick={() => setShowSettingsModal(true)}
-                  className="pill-btn"
+                  className="pill-btn flex items-center gap-1.5"
+                  title="Configure LLM Provider & Backend Endpoint"
                 >
                   <Settings className="size-3.5 text-indigo-400" />
-                  <span>{provider ? `${provider.toUpperCase()} Settings` : "LLM Settings"}</span>
+                  <span>{provider ? `${provider.toUpperCase()} Settings` : "Settings"}</span>
+                  <span
+                    className={`size-1.5 rounded-full ml-0.5 ${
+                      backendStatus === "connected"
+                        ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                        : backendStatus === "checking"
+                        ? "bg-amber-400 animate-pulse"
+                        : "bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]"
+                    }`}
+                    title={
+                      backendStatus === "connected"
+                        ? `Backend Online (${backendLatency ? `${backendLatency}ms` : "ok"})`
+                        : backendStatus === "checking"
+                        ? "Testing backend..."
+                        : "Backend Offline (Click to configure)"
+                    }
+                  />
                 </button>
               </div>
 
@@ -1029,6 +1113,80 @@ export function ResearchConsole() {
 
             {/* Modal Body */}
             <div className="settings-modal-body">
+              {/* Vanta Backend URL Configuration */}
+              <div className="form-group pb-4 border-b border-white/10">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="modalBackendUrl" className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                    <Server className="size-3.5 text-indigo-400" />
+                    Vanta Backend API URL
+                  </label>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <span
+                      className={`size-2 rounded-full ${
+                        backendStatus === "connected"
+                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                          : backendStatus === "checking"
+                          ? "bg-amber-400 animate-pulse"
+                          : "bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]"
+                      }`}
+                    />
+                    <span
+                      className={
+                        backendStatus === "connected"
+                          ? "text-emerald-400 font-medium"
+                          : backendStatus === "checking"
+                          ? "text-amber-400 font-medium"
+                          : "text-rose-400 font-medium"
+                      }
+                    >
+                      {backendStatus === "connected"
+                        ? `Online ${backendLatency ? `(${backendLatency}ms)` : ""}`
+                        : backendStatus === "checking"
+                        ? "Testing..."
+                        : "Offline / Unreachable"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 mt-1.5">
+                  <input
+                    type="text"
+                    id="modalBackendUrl"
+                    value={backendUrl}
+                    onChange={(e) => {
+                      setBackendUrl(e.target.value);
+                      localStorage.setItem("vanta_backend_url", e.target.value.trim());
+                    }}
+                    placeholder="http://localhost:8000"
+                    className="form-input flex-1 font-mono text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => checkBackendHealth(backendUrl)}
+                    className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-200 hover:text-white transition-colors cursor-pointer shrink-0"
+                  >
+                    Test Ping
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-muted-foreground mt-2 space-y-1">
+                  <p>
+                    Default: <code className="text-emerald-400 bg-white/5 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
+                  </p>
+                  {backendStatus === "disconnected" && (
+                    <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs leading-relaxed mt-2">
+                      <span className="font-semibold text-rose-400">Backend not reachable:</span> Make sure your local Vanta backend is running:
+                      <div className="mt-1 font-mono text-[11px] bg-black/40 px-2 py-1 rounded text-slate-200 select-all">
+                        uv run uvicorn api.app:app --port 8000 --reload
+                      </div>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        Or if hosted remotely, enter your public URL (e.g. ngrok, Cloudflare Tunnel, Railway).
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Provider Selection */}
               <div className="form-group">
                 <label className="text-xs font-medium text-slate-300">LLM Provider</label>
@@ -1180,10 +1338,13 @@ export function ResearchConsole() {
                   setApiKey("");
                   setBaseUrl("");
                   setModelOverride("");
+                  setBackendUrl("http://localhost:8000");
                   localStorage.removeItem("vanta_api_key");
                   localStorage.removeItem("vanta_key");
                   localStorage.removeItem("vanta_base_url");
                   localStorage.removeItem("vanta_model_override");
+                  localStorage.removeItem("vanta_backend_url");
+                  checkBackendHealth("http://localhost:8000");
                 }}
                 className="px-3.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-muted-foreground hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               >

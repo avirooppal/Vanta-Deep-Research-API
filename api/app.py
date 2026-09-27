@@ -42,6 +42,14 @@ app = FastAPI(
 
 app.add_middleware(BaseHTTPMiddleware, dispatch=request_id_middleware)
 
+async def private_network_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if request.headers.get("access-control-request-private-network"):
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
+    return response
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=private_network_middleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
