@@ -17,8 +17,9 @@ coverage/
 .coverage
 deploy/.env
 
-# Internal design docs
-architecture*.md
+# Internal design docs (root only)
+/architecture*.md
+!docs/architecture.md
 tasks.md
 
 # Graphify cache & backups

@@ -15,13 +15,13 @@
 
 ---
 
-### 🌐 [Try the Hosted Web App](https://vanta-hazel.vercel.app/console) &nbsp;•&nbsp; 📖 [Full Documentation](docs/)
+### [Try the Hosted Web App](https://vanta-hazel.vercel.app/console) &nbsp;•&nbsp; [Full Documentation](docs/)
 
 </div>
 
 ---
 
-## ⚡ Quickstart: Local Installation
+## Quickstart: Local Installation
 
 Run one command in your terminal to install and launch the **private Research Console** directly on your machine (no landing page, no marketing text):
 
@@ -39,7 +39,7 @@ irm https://raw.githubusercontent.com/avirooppal/Vanta-Deep-Research-API/main/in
 
 ---
 
-## 🌟 Key Highlights
+## Key Highlights
 
 - **15-Stage Research Engine**: Executes an autonomous multi-round loop (Hypothesize → Multi-Engine Search → Extract → Validate → Contradiction Detection → Falsification → Synthesize → Citation Entailment).
 - **Bring Your Own Key (BYOK)**: Supports OpenAI, Anthropic, Google Gemini, OpenRouter, Groq, Cerebras, and local Ollama.
@@ -49,7 +49,7 @@ irm https://raw.githubusercontent.com/avirooppal/Vanta-Deep-Research-API/main/in
 
 ---
 
-## ☁️ Cloud Deployment
+## Cloud Deployment
 
 Deploy Vanta's backend to your own cloud infrastructure in 1 click:
 
@@ -60,20 +60,20 @@ Deploy Vanta's backend to your own cloud infrastructure in 1 click:
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 Detailed technical documentation and guides:
 
 | Document | Description |
 |---|---|
-| 📐 **[Architecture & Pipeline](docs/architecture.md)** | Deep dive into the 15-stage multi-agent pipeline and engine loop |
-| 🔌 **[API Reference](docs/api.md)** | Complete REST & SSE endpoints, request schemas, and export formats |
-| 🗄️ **[Database & Models](docs/database.md)** | PostgreSQL + `pgvector` ER diagrams and schema specifications |
-| 🛡️ **[Security Architecture](docs/security.md)** | Zero-trust credential broker, encryption at rest, and audit logging |
-| 🚀 **[Cloud Deployment Guide](docs/deployment.md)** | Step-by-step guides for Render, Railway, Fly.io, and VPS |
+| **[Architecture & Pipeline](docs/architecture.md)** | Deep dive into the 15-stage multi-agent pipeline and engine loop |
+| **[API Reference](docs/api.md)** | Complete REST & SSE endpoints, request schemas, and export formats |
+| **[Database & Models](docs/database.md)** | PostgreSQL + `pgvector` ER diagrams and schema specifications |
+| **[Security Architecture](docs/security.md)** | Zero-trust credential broker, encryption at rest, and audit logging |
+| **[Cloud Deployment Guide](docs/deployment.md)** | Step-by-step guides for Render, Railway, Fly.io, and VPS |
 
 ---
 
-## 📜 License
+## License
 
 Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
