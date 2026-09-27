@@ -210,14 +210,12 @@ export function ResearchConsole() {
   const [baseUrl, setBaseUrl] = useState("");
   const [modelOverride, setModelOverride] = useState("");
   const [backendUrl, setBackendUrl] = useState<string>(() => {
+    if (!isBrowserLocal) {
+      return CLOUD_BACKEND_URL;
+    }
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("vanta_backend_url");
       if (saved) {
-        // If user is on hosted cloud (Vercel) but saved value is old localhost, automatically migrate to cloud URL
-        if (!isBrowserLocal && (saved.includes("localhost") || saved.includes("127.0.0.1"))) {
-          localStorage.setItem("vanta_backend_url", CLOUD_BACKEND_URL);
-          return CLOUD_BACKEND_URL;
-        }
         return saved.replace(/\/$/, "");
       }
     }
@@ -265,14 +263,18 @@ export function ResearchConsole() {
     const savedProvider = localStorage.getItem("vanta_provider");
     const savedBaseUrl = localStorage.getItem("vanta_base_url");
     const savedModel = localStorage.getItem("vanta_model_override");
-    const savedBackend = localStorage.getItem("vanta_backend_url");
     if (savedKey) setApiKey(savedKey);
     if (savedProvider) setProvider(savedProvider);
     if (savedBaseUrl) setBaseUrl(savedBaseUrl);
     if (savedModel) setModelOverride(savedModel);
-    if (savedBackend) setBackendUrl(savedBackend.replace(/\/$/, ""));
 
-    checkBackendHealth(savedBackend || backendUrl);
+    if (isBrowserLocal) {
+      const savedBackend = localStorage.getItem("vanta_backend_url");
+      if (savedBackend) setBackendUrl(savedBackend.replace(/\/$/, ""));
+      checkBackendHealth(savedBackend || backendUrl);
+    } else {
+      setBackendUrl(CLOUD_BACKEND_URL);
+    }
 
     function handleClickOutside(e: MouseEvent) {
       if (scopeDropdownRef.current && !scopeDropdownRef.current.contains(e.target as Node)) {
@@ -749,22 +751,24 @@ export function ResearchConsole() {
                 >
                   <Settings className="size-3.5 text-indigo-400" />
                   <span>{provider ? `${provider.toUpperCase()} Settings` : "Settings"}</span>
-                  <span
-                    className={`size-1.5 rounded-full ml-0.5 ${
-                      backendStatus === "connected"
-                        ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
-                        : backendStatus === "checking"
-                        ? "bg-amber-400 animate-pulse"
-                        : "bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]"
-                    }`}
-                    title={
-                      backendStatus === "connected"
-                        ? `Backend Online (${backendLatency ? `${backendLatency}ms` : "ok"})`
-                        : backendStatus === "checking"
-                        ? "Testing backend..."
-                        : "Backend Offline (Click to configure)"
-                    }
-                  />
+                  {isBrowserLocal && (
+                    <span
+                      className={`size-1.5 rounded-full ml-0.5 ${
+                        backendStatus === "connected"
+                          ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                          : backendStatus === "checking"
+                          ? "bg-amber-400 animate-pulse"
+                          : "bg-rose-400 shadow-[0_0_6px_rgba(244,63,94,0.8)]"
+                      }`}
+                      title={
+                        backendStatus === "connected"
+                          ? `Local Backend Online (${backendLatency ? `${backendLatency}ms` : "ok"})`
+                          : backendStatus === "checking"
+                          ? "Testing local backend..."
+                          : "Local Backend Offline (Click to configure)"
+                      }
+                    />
+                  )}
                 </button>
               </div>
 
@@ -1135,107 +1139,78 @@ export function ResearchConsole() {
 
             {/* Modal Body */}
             <div className="settings-modal-body">
-              {/* Vanta Backend URL Configuration */}
-              <div className="form-group pb-4 border-b border-white/10">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="modalBackendUrl" className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
-                    <Server className="size-3.5 text-indigo-400" />
-                    Vanta Backend API URL
-                  </label>
-                  <div className="flex items-center gap-1.5 text-[11px]">
-                    <span
-                      className={`size-2 rounded-full ${
-                        backendStatus === "connected"
-                          ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+              {/* Vanta Backend URL Configuration (Local Only) */}
+              {isBrowserLocal && (
+                <div className="form-group pb-4 border-b border-white/10">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="modalBackendUrl" className="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+                      <Server className="size-3.5 text-indigo-400" />
+                      Vanta Backend API URL
+                    </label>
+                    <div className="flex items-center gap-1.5 text-[11px]">
+                      <span
+                        className={`size-2 rounded-full ${
+                          backendStatus === "connected"
+                            ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
+                            : backendStatus === "checking"
+                            ? "bg-amber-400 animate-pulse"
+                            : "bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]"
+                        }`}
+                      />
+                      <span
+                        className={
+                          backendStatus === "connected"
+                            ? "text-emerald-400 font-medium"
+                            : backendStatus === "checking"
+                            ? "text-amber-400 font-medium"
+                            : "text-rose-400 font-medium"
+                        }
+                      >
+                        {backendStatus === "connected"
+                          ? `Online ${backendLatency ? `(${backendLatency}ms)` : ""}`
                           : backendStatus === "checking"
-                          ? "bg-amber-400 animate-pulse"
-                          : "bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]"
-                      }`}
+                          ? "Testing..."
+                          : "Offline / Unreachable"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-1.5">
+                    <input
+                      type="text"
+                      id="modalBackendUrl"
+                      value={backendUrl}
+                      onChange={(e) => {
+                        setBackendUrl(e.target.value);
+                        localStorage.setItem("vanta_backend_url", e.target.value.trim());
+                      }}
+                      placeholder="http://localhost:8000"
+                      className="form-input flex-1 font-mono text-xs"
                     />
-                    <span
-                      className={
-                        backendStatus === "connected"
-                          ? "text-emerald-400 font-medium"
-                          : backendStatus === "checking"
-                          ? "text-amber-400 font-medium"
-                          : "text-rose-400 font-medium"
-                      }
+                    <button
+                      type="button"
+                      onClick={() => checkBackendHealth(backendUrl)}
+                      className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-200 hover:text-white transition-colors cursor-pointer shrink-0"
                     >
-                      {backendStatus === "connected"
-                        ? `Online ${backendLatency ? `(${backendLatency}ms)` : ""}`
-                        : backendStatus === "checking"
-                        ? "Testing..."
-                        : "Offline / Unreachable"}
-                    </span>
+                      Test Ping
+                    </button>
+                  </div>
+
+                  <div className="text-[11px] text-muted-foreground mt-2 space-y-1">
+                    <p>
+                      Default: <code className="text-emerald-400 bg-white/5 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
+                    </p>
+                    {backendStatus === "disconnected" && (
+                      <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs leading-relaxed mt-2">
+                        <span className="font-semibold text-rose-400">Backend not reachable:</span> Make sure your local Vanta backend is running:
+                        <div className="mt-1 font-mono text-[11px] bg-black/40 px-2 py-1 rounded text-slate-200 select-all">
+                          uv run uvicorn api.app:app --port 8000 --reload
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="flex gap-2 mt-1.5">
-                  <input
-                    type="text"
-                    id="modalBackendUrl"
-                    value={backendUrl}
-                    onChange={(e) => {
-                      setBackendUrl(e.target.value);
-                      localStorage.setItem("vanta_backend_url", e.target.value.trim());
-                    }}
-                    placeholder={isBrowserLocal ? "http://localhost:8000" : CLOUD_BACKEND_URL}
-                    className="form-input flex-1 font-mono text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => checkBackendHealth(backendUrl)}
-                    className="px-3 py-1.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-xs font-medium text-slate-200 hover:text-white transition-colors cursor-pointer shrink-0"
-                  >
-                    Test Ping
-                  </button>
-                </div>
-
-                <div className="text-[11px] text-muted-foreground mt-2 space-y-1">
-                  {isBrowserLocal ? (
-                    <>
-                      <p>
-                        Default: <code className="text-emerald-400 bg-white/5 px-1 py-0.5 rounded font-mono">http://localhost:8000</code>
-                      </p>
-                      {backendStatus === "disconnected" && (
-                        <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 text-xs leading-relaxed mt-2">
-                          <span className="font-semibold text-rose-400">Backend not reachable:</span> Make sure your local Vanta backend is running:
-                          <div className="mt-1 font-mono text-[11px] bg-black/40 px-2 py-1 rounded text-slate-200 select-all">
-                            uv run uvicorn api.app:app --port 8000 --reload
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Default Cloud Fleet:</span>
-                        {backendUrl !== CLOUD_BACKEND_URL && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setBackendUrl(CLOUD_BACKEND_URL);
-                              localStorage.setItem("vanta_backend_url", CLOUD_BACKEND_URL);
-                              checkBackendHealth(CLOUD_BACKEND_URL);
-                            }}
-                            className="text-indigo-400 hover:text-indigo-300 text-[11px] cursor-pointer hover:underline font-mono"
-                          >
-                            Reset to Default Cloud
-                          </button>
-                        )}
-                      </div>
-                      {backendStatus === "disconnected" && (
-                        <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/25 text-amber-300 text-xs leading-relaxed mt-2">
-                          <span className="font-semibold text-amber-400">Cloud backend is connecting:</span> Render free web services spin down after inactivity and take ~45–60 seconds to wake up on the first request.
-                          <div className="mt-1 text-[11px] text-slate-300">
-                            Please wait a moment and click <strong>Test Ping</strong> above.
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
+              )}
 
               {/* Provider Selection */}
               <div className="form-group">

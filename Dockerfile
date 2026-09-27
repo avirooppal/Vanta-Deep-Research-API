@@ -47,15 +47,3 @@ EXPOSE ${PORT}
 
 # Cloud & local ready entrypoint
 CMD ["sh", "scripts/start_cloud.sh"]
-
-
-# ─── Stage 3: playwright variant (PDF/screenshot features) ──────────────────
-FROM runtime AS playwright
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        # Chromium system deps
-        libnss3 libasound2 libxss1 libatk-bridge2.0-0 \
-        libgtk-3-0 libgbm1 libxcomposite1 libxdamage1 \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN playwright install chromium --with-deps
