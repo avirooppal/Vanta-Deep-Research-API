@@ -1064,90 +1064,27 @@ All configuration is driven by environment variables, managed through Pydantic `
 
 ---
 
-## Installation
+## Installation: Local Research Console
 
-### Prerequisites
+> [!NOTE]
+> Installing locally installs **only the private Research Console** directly on your machine (no landing page or public website). Everything runs self-contained on your local host.
 
-| Dependency | Minimum Version | Purpose |
-|---|---|---|
-| Docker | 24.0+ | Container runtime |
-| Docker Compose | 2.20+ (plugin) | Stack orchestration |
-| Python | 3.12+ | Local development only |
-| uv | 0.4+ | Fast Python package manager (local dev) |
+### 1-Click Download & Launch
 
----
+1. **Download Vanta**:
+   - Click to [**Download Vanta (.ZIP)**](https://github.com/avirooppal/Vanta-Deep-Research-API/archive/refs/heads/main.zip) and unzip the folder.
 
-### Docker Setup (Recommended)
+2. **Launch the Console**:
+   - **Windows**: Double-click **`start.bat`**
+   - **macOS / Linux**: Run in terminal:
+     ```bash
+     sh start.sh
+     ```
+   *(Alternatively, run: `docker compose -f deploy/docker-compose.yml up -d`)*
 
-This is the standard path for both local development and production.
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/avirooppal/Vanta-Deep-Research-API
-cd Vanta-Deep-Research-API
-
-# 2. Configure environment
-cp .env.example .env
-# Edit .env — set SECRET_KEY to a unique random string (32+ characters)
-# (Optional: set default OPENAI_API_KEY, ANTHROPIC_API_KEY, etc., or pass keys per-request via Bearer header)
-
-# 3. Build and start all services
-#    Services: api, worker, postgres (pgvector), redis, searxng, caddy
-docker compose -f deploy/docker-compose.yml up -d --build
-
-# 4. Check service health & logs
-docker compose -f deploy/docker-compose.yml ps
-docker compose -f deploy/docker-compose.yml logs -f api worker
-
-# 5. (Optional) For local development with live code hot-reload:
-docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.override.yml up -d
-
-# 6. Stop all services:
-docker compose -f deploy/docker-compose.yml down
-```
-
-The API will be available at `http://localhost:8000`. The built-in interactive console is at `http://localhost:8000/`.
-
----
-
-### Local Development Setup
-
-```bash
-# 1. Clone
-git clone https://github.com/avirooppal/Vanta-Deep-Research-API
-cd Vanta-Deep-Research-API
-
-# 2. Install uv (if not installed)
-pip install uv
-
-# 3. Install dependencies
-uv pip install -r requirements.txt
-
-# 4. Install Playwright Chromium browser
-playwright install chromium
-playwright install-deps
-
-# 5. Configure environment
-cp .env.example .env
-# Edit .env with your DATABASE_URL, REDIS_URL, SECRET_KEY
-
-# 6. Run database migrations
-uv run python scripts/migrate.py
-
-# 7. Start services (requires running PostgreSQL + Redis + SearXNG locally)
-
-# Terminal 1: API Server
-uv run uvicorn api.app:app --reload --port 8000
-
-# Terminal 2: ARQ Worker
-uv run arq core.queue.worker.WorkerSettings
-```
-
-> [!TIP]
-> You can run only PostgreSQL, Redis, and SearXNG via Docker while running the Python processes locally for faster iteration:
-> ```bash
-> docker compose up -d postgres redis searxng
-> ```
+3. **Start Researching**:
+   - Your browser will automatically open directly to **`http://localhost:8000`**.
+   - The local Research Console is live with zero configuration needed.
 
 ---
 
@@ -1467,21 +1404,23 @@ Vanta is engineered with clear architectural separation between **Local Developm
 
 ---
 
-### 1. Local Deployment
+### 1. Local Deployment (Console Only)
 
-For running entirely on your local machine with full Docker infrastructure:
+Installing locally downloads and launches **only the private Research Console** directly on your machine:
 
 ```bash
-# 1. Clone & copy local env
-git clone https://github.com/avirooppal/Vanta-Deep-Research-API.git
-cd Vanta-Deep-Research-API
-cp .env.example .env
+# 1. Download & extract Vanta (.ZIP)
+#    https://github.com/avirooppal/Vanta-Deep-Research-API/archive/refs/heads/main.zip
 
-# 2. Start full local stack (Postgres, Redis, SearXNG, API, Worker)
-docker compose -f deploy/docker-compose.yml up -d --build
+# 2. Launch the Console:
+# Windows:
+start.bat
 
-# 3. Or run API directly with uv:
-uv run uvicorn api.app:app --port 8000 --reload
+# macOS / Linux:
+sh start.sh
+
+# Or with Docker:
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
 ---
