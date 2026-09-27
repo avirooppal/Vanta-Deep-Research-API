@@ -44,7 +44,7 @@ cleanup() {
   exit 0
 }
 
-trap cleanup SIGINT SIGTERM
+trap cleanup INT TERM
 
 # 3. Start FastAPI server with proxy headers for cloud reverse proxies
 echo "[3/3] Launching Uvicorn ASGI server..."
