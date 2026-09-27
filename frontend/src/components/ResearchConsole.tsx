@@ -15,16 +15,32 @@ import {
   EyeOff,
   ArrowRight,
   ChevronDown,
+  GraduationCap,
+  Zap,
+  BookOpen,
 } from "lucide-react";
 import { marked } from "marked";
 import { CustomSelect, SelectOption } from "./ui/CustomSelect";
 
 const SCOPES = [
-  { id: "research", icon: "🔬", label: "All Web (Research)", desc: "Balanced evidence & structured citations", rounds: 3 },
-  { id: "study", icon: "🎓", label: "Study Deep (Feynman)", desc: "First-principles explanations & quiz", rounds: 2 },
-  { id: "brief", icon: "⚡", label: "Executive Brief (BLUF)", desc: "Rapid summary & action items", rounds: 1 },
-  { id: "deep", icon: "🏛️", label: "Academic Deep (Exhaustive)", desc: "Literature review & whitepapers", rounds: 4 },
+  { id: "research", label: "All Web (Research)", desc: "Balanced evidence & structured citations", rounds: 3 },
+  { id: "study", label: "Study Deep (Feynman)", desc: "First-principles explanations & quiz", rounds: 2 },
+  { id: "brief", label: "Executive Brief (BLUF)", desc: "Rapid summary & action items", rounds: 1 },
+  { id: "deep", label: "Academic Deep (Exhaustive)", desc: "Literature review & whitepapers", rounds: 4 },
 ];
+
+function renderScopeIcon(id: string, className = "size-4") {
+  switch (id) {
+    case "study":
+      return <GraduationCap className={className} />;
+    case "brief":
+      return <Zap className={className} />;
+    case "deep":
+      return <BookOpen className={className} />;
+    default:
+      return <Globe className={className} />;
+  }
+}
 
 interface ModeOption {
   id: string;
@@ -549,36 +565,44 @@ export function ResearchConsole() {
                 <button
                   type="button"
                   onClick={() => setShowScopeDropdown(!showScopeDropdown)}
-                  className="scope-pill-btn"
+                  className={`scope-pill-btn ${showScopeDropdown ? "open" : ""}`}
                 >
-                  <span>{currentScope.icon}</span>
+                  <span className="shrink-0">{renderScopeIcon(currentScope.id, "size-3.5 text-indigo-300")}</span>
                   <span>{currentScope.label}</span>
                   <ChevronDown
-                    className={`size-3.5 text-muted-foreground transition-transform ${
-                      showScopeDropdown ? "rotate-180" : ""
+                    className={`size-3.5 text-muted-foreground transition-transform duration-200 ${
+                      showScopeDropdown ? "rotate-180 text-foreground" : ""
                     }`}
                   />
                 </button>
 
                 {showScopeDropdown && (
                   <div className="scope-dropdown-menu">
-                    {SCOPES.map((s) => (
-                      <div
-                        key={s.id}
-                        onClick={() => {
-                          setMode(s.id);
-                          setRounds(s.rounds);
-                          setShowScopeDropdown(false);
-                        }}
-                        className={`scope-item ${mode === s.id ? "active" : ""}`}
-                      >
-                        <span className="text-base">{s.icon}</span>
-                        <div>
-                          <div className="scope-item-name">{s.label}</div>
-                          <div className="scope-item-desc">{s.desc}</div>
+                    {SCOPES.map((s) => {
+                      const isSelected = mode === s.id;
+                      return (
+                        <div
+                          key={s.id}
+                          onClick={() => {
+                            setMode(s.id);
+                            setRounds(s.rounds);
+                            setShowScopeDropdown(false);
+                          }}
+                          className={`scope-item ${isSelected ? "active" : ""}`}
+                        >
+                          <div className={`scope-item-icon-wrapper ${s.id}`}>
+                            {renderScopeIcon(s.id, "size-4")}
+                          </div>
+                          <div className="scope-item-text">
+                            <div className="scope-item-name">{s.label}</div>
+                            <div className="scope-item-desc">{s.desc}</div>
+                          </div>
+                          {isSelected && (
+                            <Check className="size-4 text-indigo-400 shrink-0 ml-auto" />
+                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -597,26 +621,32 @@ export function ResearchConsole() {
                     <Clock className="size-3.5 text-blue-400" />
                     <span>{rounds} Rounds</span>
                     <ChevronDown
-                      className={`size-3 text-muted-foreground transition-transform ${
-                        showRoundsDropdown ? "rotate-180" : ""
+                      className={`size-3 text-muted-foreground transition-transform duration-200 ${
+                        showRoundsDropdown ? "rotate-180 text-foreground" : ""
                       }`}
                     />
                   </button>
 
                   {showRoundsDropdown && (
                     <div className="rounds-dropdown-menu">
-                      {[1, 2, 3, 4, 5].map((r) => (
-                        <div
-                          key={r}
-                          onClick={() => {
-                            setRounds(r);
-                            setShowRoundsDropdown(false);
-                          }}
-                          className={`rounds-item ${rounds === r ? "active" : ""}`}
-                        >
-                          {r} {r === 1 ? "Round (Fast)" : r === 3 ? "Rounds (Balanced)" : r === 5 ? "Rounds (Max)" : "Rounds"}
-                        </div>
-                      ))}
+                      {[1, 2, 3, 4, 5].map((r) => {
+                        const isSelected = rounds === r;
+                        return (
+                          <div
+                            key={r}
+                            onClick={() => {
+                              setRounds(r);
+                              setShowRoundsDropdown(false);
+                            }}
+                            className={`rounds-item ${isSelected ? "active" : ""}`}
+                          >
+                            <span>
+                              {r} {r === 1 ? "Round (Fast)" : r === 3 ? "Rounds (Balanced)" : r === 5 ? "Rounds (Max)" : "Rounds"}
+                            </span>
+                            {isSelected && <Check className="size-3.5 text-indigo-400 shrink-0 ml-2" />}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

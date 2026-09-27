@@ -278,56 +278,126 @@
             transition: all 0.15s ease;
         }
 
-        .scope-pill-btn:hover {
+        .scope-pill-btn:hover,
+        .scope-pill-btn.open {
             background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.28);
             color: #ffffff;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
         }
 
         .scope-dropdown-menu {
             position: absolute;
-            top: calc(100% + 6px);
+            top: calc(100% + 8px);
             right: 0;
-            width: 280px;
-            background: #090e1a;
+            width: 320px;
+            background: rgba(10, 16, 32, 0.88);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            padding: 0.4rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            padding: 0.45rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.12);
             display: none;
             flex-direction: column;
-            gap: 0.2rem;
-            z-index: 50;
+            gap: 0.25rem;
+            z-index: 60;
+            animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes dropdownFadeIn {
+            from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .scope-item {
             display: flex;
             align-items: center;
-            gap: 0.65rem;
-            padding: 0.55rem 0.65rem;
-            border-radius: 8px;
+            gap: 0.75rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: all 0.16s ease;
+            position: relative;
         }
 
         .scope-item:hover {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .scope-item.active {
-            background: rgba(129, 140, 248, 0.15);
-            border: 1px solid rgba(129, 140, 248, 0.3);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.14) 100%);
+            border: 1px solid rgba(129, 140, 248, 0.38);
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+        }
+
+        .scope-item-icon-wrapper {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.15s ease;
+            font-size: 1.1rem;
+        }
+
+        .scope-item:hover .scope-item-icon-wrapper {
+            transform: scale(1.05);
+        }
+
+        .scope-item-icon-wrapper.research {
+            background: rgba(56, 189, 248, 0.14);
+            border-color: rgba(56, 189, 248, 0.28);
+            color: #38bdf8;
+        }
+
+        .scope-item-icon-wrapper.study {
+            background: rgba(192, 132, 252, 0.14);
+            border-color: rgba(192, 132, 252, 0.28);
+            color: #c084fc;
+        }
+
+        .scope-item-icon-wrapper.brief {
+            background: rgba(251, 191, 36, 0.14);
+            border-color: rgba(251, 191, 36, 0.28);
+            color: #fbbf24;
+        }
+
+        .scope-item-icon-wrapper.deep {
+            background: rgba(129, 140, 248, 0.14);
+            border-color: rgba(129, 140, 248, 0.28);
+            color: #818cf8;
+        }
+
+        .scope-item-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            flex-grow: 1;
+            min-width: 0;
         }
 
         .scope-item-name {
-            font-size: 0.825rem;
+            font-size: 0.85rem;
             font-weight: 600;
+            color: #f1f5f9;
+            letter-spacing: -0.01em;
+        }
+
+        .scope-item.active .scope-item-name {
             color: #ffffff;
         }
 
         .scope-item-desc {
-            font-size: 0.725rem;
+            font-size: 0.735rem;
             color: #94a3b8;
+            line-height: 1.35;
         }
 
         /* Bottom Toolbar */
@@ -352,27 +422,34 @@
 
         .rounds-dropdown-menu {
             position: absolute;
-            bottom: calc(100% + 6px);
+            bottom: calc(100% + 8px);
             left: 0;
-            width: 210px;
-            background: #090e1a;
+            width: 220px;
+            background: rgba(10, 16, 32, 0.88);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 0.35rem;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), inset 0 1px 1px rgba(255, 255, 255, 0.12);
             display: none;
             flex-direction: column;
             gap: 0.2rem;
-            z-index: 50;
+            z-index: 60;
+            animation: dropdownFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .rounds-item {
-            padding: 0.5rem 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.55rem 0.8rem;
             font-size: 0.825rem;
             color: #cbd5e1;
-            border-radius: 6px;
+            border-radius: 8px;
+            border: 1px solid transparent;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: all 0.15s ease;
         }
 
         .rounds-item:hover {
@@ -381,8 +458,9 @@
         }
 
         .rounds-item.active {
-            background: rgba(129, 140, 248, 0.15);
-            color: #818cf8;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.14) 100%);
+            border-color: rgba(129, 140, 248, 0.35);
+            color: #ffffff;
             font-weight: 600;
         }
 
@@ -990,31 +1068,31 @@
 
                         <div class="scope-dropdown-menu" id="scopeDropdownMenu">
                             <div class="scope-item active" id="scope-opt-research" onclick="selectScopeMode('research', '🔬', 'All Web (Research)', 3)">
-                                <span style="font-size: 1.2rem;">🔬</span>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span class="scope-item-name">All Web (Research)</span>
-                                    <span class="scope-item-desc">Comprehensive multi-angle synthesis (3 rounds)</span>
+                                <div class="scope-item-icon-wrapper research">🔬</div>
+                                <div class="scope-item-text">
+                                    <div class="scope-item-name">All Web (Research)</div>
+                                    <div class="scope-item-desc">Balanced evidence & structured citations</div>
                                 </div>
                             </div>
-                            <div class="scope-item" id="scope-opt-study" onclick="selectScopeMode('study', '🎓', 'Study Deep', 2)">
-                                <span style="font-size: 1.2rem;">🎓</span>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span class="scope-item-name">Study Deep</span>
-                                    <span class="scope-item-desc">Foundational concepts & principles (2 rounds)</span>
+                            <div class="scope-item" id="scope-opt-study" onclick="selectScopeMode('study', '🎓', 'Study Deep (Feynman)', 2)">
+                                <div class="scope-item-icon-wrapper study">🎓</div>
+                                <div class="scope-item-text">
+                                    <div class="scope-item-name">Study Deep (Feynman)</div>
+                                    <div class="scope-item-desc">First-principles explanations & quiz</div>
                                 </div>
                             </div>
-                            <div class="scope-item" id="scope-opt-brief" onclick="selectScopeMode('brief', '⚡', 'Executive Brief', 1)">
-                                <span style="font-size: 1.2rem;">⚡</span>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span class="scope-item-name">Executive Brief</span>
-                                    <span class="scope-item-desc">Rapid high-level strategic takeaway (1 round)</span>
+                            <div class="scope-item" id="scope-opt-brief" onclick="selectScopeMode('brief', '⚡', 'Executive Brief (BLUF)', 1)">
+                                <div class="scope-item-icon-wrapper brief">⚡</div>
+                                <div class="scope-item-text">
+                                    <div class="scope-item-name">Executive Brief (BLUF)</div>
+                                    <div class="scope-item-desc">Rapid summary & action items</div>
                                 </div>
                             </div>
-                            <div class="scope-item" id="scope-opt-deep" onclick="selectScopeMode('deep', '🏛️', 'Academic Deep', 4)">
-                                <span style="font-size: 1.2rem;">🏛️</span>
-                                <div style="display: flex; flex-direction: column;">
-                                    <span class="scope-item-name">Academic Deep</span>
-                                    <span class="scope-item-desc">Exhaustive scholarly critique & verification (4 rounds)</span>
+                            <div class="scope-item" id="scope-opt-deep" onclick="selectScopeMode('deep', '🏛️', 'Academic Deep (Exhaustive)', 4)">
+                                <div class="scope-item-icon-wrapper deep">🏛️</div>
+                                <div class="scope-item-text">
+                                    <div class="scope-item-name">Academic Deep (Exhaustive)</div>
+                                    <div class="scope-item-desc">Literature review & whitepapers</div>
                                 </div>
                             </div>
                         </div>
