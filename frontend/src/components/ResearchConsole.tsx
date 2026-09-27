@@ -114,7 +114,7 @@ const isBrowserLocal =
     window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "0.0.0.0");
 
-const CLOUD_BACKEND_URL = "https://vanta-backend-e4li.onrender.com";
+const CLOUD_BACKEND_URL = "https://vanta-backend-a4il.onrender.com";
 
 const DEFAULT_API_BASE = (
   (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_URL) ||
@@ -274,6 +274,7 @@ export function ResearchConsole() {
       checkBackendHealth(savedBackend || backendUrl);
     } else {
       setBackendUrl(CLOUD_BACKEND_URL);
+      localStorage.removeItem("vanta_backend_url");
     }
 
     function handleClickOutside(e: MouseEvent) {

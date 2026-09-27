@@ -129,7 +129,7 @@ function App() {
               Fleet Active
             </span>
             <a
-              href={`${((typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) || (isLocalHost ? "http://localhost:8000" : "https://vanta-backend-e4li.onrender.com")).replace(/\/$/, "")}/docs`}
+              href={`${((typeof window !== "undefined" && localStorage.getItem("vanta_backend_url")) || (isLocalHost ? "http://localhost:8000" : "https://vanta-backend-a4il.onrender.com")).replace(/\/$/, "")}/docs`}
               target="_blank"
               rel="noreferrer"
               className="text-xs text-muted-foreground transition-colors hover:text-foreground"
